@@ -1,4 +1,4 @@
-from models import request_players_by_league, getplplayer, getplList
+from models import request_players_by_league, getstrikers, get_meta_ratings, showmeta, getwingers, getcams, getcms, getcdms, getfbs, getcbs, getplsquad
 from app import app
 
 @app.route("/home/")
@@ -9,17 +9,49 @@ def home():
 def user_profile(id):
     return "Profile page of user #{}".format(id)
 
-@app.route('/plplayer/<int:resource_id>')
-def plplayer(resource_id):
-    return getplplayer(resource_id)
+@app.route('/calculatemeta/')
+def getmeta():
+    return get_meta_ratings()
 
-@app.route('/getpllist/')
-def getpllist():
-    return getplList()
+@app.route('/players/leagues/pl/strikers/')
+def getstrikerslist():
+    return getstrikers(13)
 
-@app.route("/getplsquads/", methods=['GET','POST'])
-def getplsquads():
+@app.route('/players/leagues/pl/wingers/')
+def getwingerslist():
+    return getwingers(13)
+
+@app.route('/players/leagues/pl/cams/')
+def getcamslist():
+    return getcams(13)
+
+@app.route('/players/leagues/pl/cms/')
+def getcmslist():
+    return getcms(13)
+
+@app.route('/players/leagues/pl/cdms/')
+def getcdmslist():
+    return getcdms(13)
+
+@app.route('/players/leagues/pl/fbs/')
+def getfbslist():
+    return getfbs(13)
+
+@app.route('/players/leagues/pl/cbs/')
+def getcbslist():
+    return getcbs(13)
+
+@app.route('/squads/leagues/pl/')
+def getplsquadlist():
+    return getplsquad()
+
+@app.route("/updateplayerdb/", methods=['GET','POST'])
+def updateplayers():
     return request_players_by_league()
+
+# @app.route("/showmeta/")
+# def show():
+#     return showmeta()
 
 
 
