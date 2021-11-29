@@ -203,19 +203,19 @@ class Player(db.Model):
         }
 
 #ask how to avoid repetitions
-def getplsquad():
+def getsquad(league):
     squad = { 
         'formation': '4231',
-        'LW': Player.query.filter_by(**{'league' : 13}).filter_by(**{'position' : 'LW'}).order_by(Player.wing_meta_rating.desc()).first().serialize,
-        'ST': Player.query.filter_by(**{'league' : 13}).order_by(Player.st_meta_rating.desc()).first().serialize,
-        'RW': Player.query.filter_by(**{'league' : 13}).filter_by(**{'position' : 'RW'}).order_by(Player.wing_meta_rating.desc()).first().serialize,
-        'CAM': Player.query.filter_by(**{'league' : 13}).order_by(Player.cam_meta_rating.desc()).first().serialize,
-        'CM': Player.query.filter_by(**{'league' : 13}).order_by(Player.cm_meta_rating.desc()).first().serialize,
-        'CDM': Player.query.filter_by(**{'league' : 13}).order_by(Player.cdm_meta_rating.desc()).first().serialize,
-        'LB': Player.query.filter_by(**{'league' : 13}).filter_by(**{'position' : 'LB'}).order_by(Player.fb_meta_rating.desc()).first().serialize,
-        'CB1': Player.query.filter_by(**{'league' : 13}).order_by(Player.cb_meta_rating.desc()).first().serialize,
-        'CB2': Player.query.filter_by(**{'league' : 13}).order_by(Player.cb_meta_rating.desc()).offset(1).first().serialize,
-        'RB': Player.query.filter_by(**{'league' : 13}).filter_by(**{'position' : 'RB'}).order_by(Player.fb_meta_rating.desc()).first().serialize,
+        'LW': Player.query.filter_by(**{'league' : league}).filter_by(**{'position' : 'LW'}).order_by(Player.wing_meta_rating.desc()).first().serialize,
+        'ST': Player.query.filter_by(**{'league' : league}).order_by(Player.st_meta_rating.desc()).first().serialize,
+        'RW': Player.query.filter_by(**{'league' : league}).filter_by(**{'position' : 'RW'}).order_by(Player.wing_meta_rating.desc()).first().serialize,
+        'CAM': Player.query.filter_by(**{'league' : league}).order_by(Player.cam_meta_rating.desc()).first().serialize,
+        'CM': Player.query.filter_by(**{'league' : league}).order_by(Player.cm_meta_rating.desc()).first().serialize,
+        'CDM': Player.query.filter_by(**{'league' : league}).order_by(Player.cdm_meta_rating.desc()).first().serialize,
+        'LB': Player.query.filter_by(**{'league' : league}).filter_by(**{'position' : 'LB'}).order_by(Player.fb_meta_rating.desc()).first().serialize,
+        'CB1': Player.query.filter_by(**{'league' : league}).order_by(Player.cb_meta_rating.desc()).first().serialize,
+        'CB2': Player.query.filter_by(**{'league' : league}).order_by(Player.cb_meta_rating.desc()).offset(1).first().serialize,
+        'RB': Player.query.filter_by(**{'league' : league}).filter_by(**{'position' : 'RB'}).order_by(Player.fb_meta_rating.desc()).first().serialize,
         }
     print((squad))
     return squad
@@ -435,6 +435,7 @@ def get_cb_meta():
 def request_players_by_league():
     leagues = [13, 16, 19, 31, 53] # 13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga
     for league in leagues:
+        print(league)
         request_data = { 
             "rarity": 1,
             "league": league 
@@ -511,17 +512,15 @@ def request_players_by_league():
                         player["physicality_attributes"]["stamina"],
                         player["physicality_attributes"]["jumping"],
                         player["physicality_attributes"]["strength"]
-                    )
-                    
+                    )  
                     db.session.add(PlayerItem)
                     db.session.commit()
             #return(jsonify(response["items"]))  #meanwhile jsonifying page 1 of the items in the first response
-            return '<div><h3>Player database updated:</h3><ul><li>Premier League</li><li>Ligue 1</li><li>Bundesliga</li><li>SerieA</li><li>LaLiga</li></ul></div>'
+            
         except:
             print("error ocurred")
             return None
-
-    
+    return '<div><h3>Player database updated:</h3><ul><li>Premier League</li><li>Ligue 1</li><li>Bundesliga</li><li>SerieA</li><li>LaLiga</li></ul></div>'
 
 if __name__ == "__main__":
 
