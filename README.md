@@ -1,5 +1,5 @@
 # futstarter-backend documentation
-FIFA FUT companion webapp for model-based meta-stat player sorting and team building
+### FIFA FUT companion webapp for model-based meta-stat player sorting and team building. This initial version only includes the 442 formation for five different leagues. The player database is created by fetching the FUTDB API REST and the player sorting is based on an original meta rating calculation algorithm. 
 
 # Table of contents
 1. [Routes & Methods](#routes-&-methods)
@@ -8,7 +8,6 @@ FIFA FUT companion webapp for model-based meta-stat player sorting and team buil
     2. [User methods](#user-methods)
         1. [GET methods](#get-methods)
         2. [POST methods](#post-methods)
-        3. [DELETE methods](#delete-methods)
 2. [Player data](#player-data)
     1. [Player JSON response attributes](#player-json-response-attributes)
     2. [Player positions](#player-positions)
@@ -19,69 +18,71 @@ FIFA FUT companion webapp for model-based meta-stat player sorting and team buil
 # 1. Routes & Methods
 ## 1.1 Admin methods
 ### 1.1.1 Database methods
-#### To update player database and populate the Player table stats, excepting the meta-ratings that will be initialized with value 1:
-    /updateplayerdb
 
-#### To calculate meta ratings and update the position-relative meta ratings in each element of the Player table  :
-    /calculatemeta 
+#### To setup or update the player database the admin accesses:
+    /update
 
-#### To generate squads based on the best players for each position by meta-sorting player lists:
-    /generatesquads
+#### This route runs two methods:
+ 
+    update_player_db()
+
+#### which updates the player database and populates the player table, excepting the meta-ratings that will be initialized with value 1,  and
+
+    calculate_meta()
+
+#### which calculates meta ratings and updates the position-relative meta ratings for each player of the Player table 
 
 ------
 ## 1.2 User methods
 
 ### 1.2.1 GET methods
 #### -Players meta-rating rankings json data:
-    GET /players/leagues/<int:league>/<int:position>   
-    GET /players/nations/<int:nation>/<int:position>
+    GET /players/leagues/<int:league>/<str:position>   
+    GET /players/nations/<int:nation>/<str:position>
 
 With this data we can render player ranking lists in the Players view
 
 #### -Calculated squads:
-    GET /squads/leagues/<int:league>/<int:position>
-    GET /squads/nations/<int:nation>/<int:position>
+    GET /squads/leagues/<int:league>
+    GET /squads/nations/<int:nation>
 
 And also render the squads previosuly generated with the meta calculation model
 ### 1.2.2 POST methods
 #### -Registering new user:
     POST /register 
     body = {
-
+        "username": <str>,
+        "email": <str>,
+        "password": <str>
+    }
+    // OK response
+    response = {
+        "status": 200,
+        "data": {
+            "user": {
+                "username": <str>,
+                "email": <str>
+            },
+            "token": <str>
+        }
+    }
+    // BAD response
+    response = {
+        "status": 400,
+        "msg": <str>
     }
 
 #### -Loging in:
     UPDATE /login
     body = {
-
-    }
-
-#### -Loging out:
-    UPDATE /login
-    body = {
-
-    }
-
-#### -Changing password:
-    UPDATE /user
-    body = {
-
-    }
-
-#### -Saving squad
-    POST /user/squads
-
-### 1.2.3 DELETE methods
-#### -Deleting user
-    DELETE /users
-    body = {
-
+        "email": <str>,
+        "password": <str>
     }
 
 # 2. Player data
 ## 2.1 Player JSON response attributes
-
-    {
+    [
+        {
             "id": <int>,
             "resource_id": <int>,
             "rarity": <int>,
@@ -142,32 +143,50 @@ And also render the squads previosuly generated with the meta calculation model
             "stamina" : <int>,
             "jumping" : <int>,
             "strength" : <int>
-        }
+        },
+        {...}
+    ]
 
 ## 2.2 Player positions:
 * LW/LM/LF
-* ST/LST/RST/CF
-* RW/RM/LF
-* CAM/LCAM/CCAM/RCAM
-* CM/LCM/CCM/RCM
-* CDM/LCDM/RCDM
-* LB/LWB
-* CB/LCB/RCB
-* RB/RWB
+* LST/CST/RST/CF
+* RW/RM/RF
+* LCAM/CCAM/RCAM
+* LCM/CCM/RCM
+* LCDM/CCDM/RCDM
+* LWB/LB
+* LCB/CCB/RCB
+* RWB/RB
 * GK
+
+## 2.3 Leagues:
+* 13: Premier League
+* 16: Ligue 1
+* 19: Bundesliga
+* 31: Serie A
+* 53: LaLiga
 
 # 3. Squad data
 
 ## 3.1 Squad JSON response
 
-    [
-        "formation": "433",
-        "LW" : { Player JSON... },
-        "ST" : { Player JSON...},
-        "RW": { Player JSON...},
-        ...
-    ]
+### For the 442 formation
+    data = {
+        'lst': {},
+        'rst': {},
+        'lm': {},
+        'lcm': {},
+        'rcm': {},
+        'rm': {},
+        'lb': {},
+        'lcb': {},
+        'rcb': {},
+        'rb': {},
+        'gk': {}
+    }
 ## 3.2 Squad formations:
+
+### For now only the 442 will be implemented, but in the future the model could include:
 
 * 352: {GK, LCB, CCB, RCB, LM, LCDM, CAM, RCDM, RM, LST, RST}
 * 41212: {GK, LB, LCB, RCB, RB, CDM, LM, CAM, RM, LST, RST}
@@ -184,6 +203,8 @@ And also render the squads previosuly generated with the meta calculation model
 # Future updates:
 
 Further improvements to the generated squad and the generator itself could be made. Ranging from the creation of a futbin-based approach of a squad builder, to the implementation of a user controlled, meta-weight modelling tool for squad generation. For example, imagine starting from a futbin-based user-built squad, and on top of it, tweaking the meta-weights to alter the team as desired.
+Also, the database could be extendend to cover the entire FUT player database, every squad formation and any nation.
+
 
 
 

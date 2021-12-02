@@ -1,4 +1,4 @@
-from models import request_players_by_league, getstrikers, get_meta_ratings, showmeta, getwingers, getcams, getcms, getcdms, getfbs, getcbs, getsquad
+from models import update, get_strikers, get_wingers, get_cams, get_cms, get_cdms, get_fbs, get_cbs, get_squad_by_league
 from app import app
 
 @app.route("/home/")
@@ -9,173 +9,171 @@ def home():
 def user_profile(id):
     return "Profile page of user #{}".format(id)
 
-@app.route('/calculatemeta/')
-def getmeta():
-    return get_meta_ratings()
+@app.route('/update/')
+def update_function():
+    return update()
 
 @app.route('/players/leagues/pl/strikers/')
 def getplstrikerslist():
-    return getstrikers(13)
+    return get_strikers(13)
 
 @app.route('/players/leagues/pl/wingers/')
 def getplwingerslist():
-    return getwingers(13)
+    return get_wingers(13)
 
 @app.route('/players/leagues/pl/cams/')
 def getplcamslist():
-    return getcams(13)
+    return get_cams(13)
 
 @app.route('/players/leagues/pl/cms/')
 def getplcmslist():
-    return getcms(13)
+    return get_cms(13)
 
 @app.route('/players/leagues/pl/cdms/')
 def getplcdmslist():
-    return getcdms(13)
+    return get_cdms(13)
 
 @app.route('/players/leagues/pl/fbs/')
 def getplfbslist():
-    return getfbs(13)
+    return get_fbs(13)
 
 @app.route('/players/leagues/pl/cbs/')
 def getplcbslist():
-    return getcbs(13)
+    return get_cbs(13)
 
-@app.route('/squads/leagues/pl/')
-def getplsquadlist():
-    return getsquad(13)
+@app.route('/squads/leagues/<int:league>/')
+def getplsquadlist(league):
+    return get_squad_by_league(league)
 
 @app.route('/players/leagues/ligue1/strikers/')
 def getl1strikerslist():
-    return getstrikers(16)
+    return get_strikers(16)
 
 @app.route('/players/leagues/ligue1/wingers/')
 def getl1wingerslist():
-    return getwingers(16)
+    return get_wingers(16)
 
 @app.route('/players/leagues/ligue1/cams/')
 def getl1camslist():
-    return getcams(16)
+    return get_cams(16)
 
 @app.route('/players/leagues/ligue1/cms/')
 def getl1cmslist():
-    return getcms(16)
+    return get_cms(16)
 
 @app.route('/players/leagues/ligue1/cdms/')
 def getl1cdmslist():
-    return getcdms(16)
+    return get_cdms(16)
 
 @app.route('/players/leagues/ligue1/fbs/')
 def getl1fbslist():
-    return getfbs(16)
+    return get_fbs(16)
 
 @app.route('/players/leagues/ligue1/cbs/')
 def getl1cbslist():
-    return getcbs(16)
+    return get_cbs(16)
 
 @app.route('/squads/leagues/ligue1/')
 def getl1squadlist():
-    return getsquad(16)
+    return get_squad_by_league(16)
 
 @app.route('/players/leagues/bundes/strikers/')
 def getbundesstrikerslist():
-    return getstrikers(19)
+    return get_strikers(19)
 
 @app.route('/players/leagues/bundes/wingers/')
 def getbundeswingerslist():
-    return getwingers(19)
+    return get_wingers(19)
 
 @app.route('/players/leagues/bundes/cams/')
 def getbundescamslist():
-    return getcams(19)
+    return get_cams(19)
 
 @app.route('/players/leagues/bundes/cms/')
 def getbundescmslist():
-    return getcms(19)
+    return get_cms(19)
 
 @app.route('/players/leagues/bundes/cdms/')
 def getbundescdmslist():
-    return getcdms(19)
+    return get_cdms(19)
 
 @app.route('/players/leagues/bundes/fbs/')
 def getbundesfbslist():
-    return getfbs(19)
+    return get_fbs(19)
 
 @app.route('/players/leagues/bundes/cbs/')
 def getbundescbslist():
-    return getcbs(19)
+    return get_cbs(19)
 
 @app.route('/squads/leagues/bundes/')
 def getbundessquadlist():
-    return getsquad(19)
+    return get_squad_by_league(19)
 
 @app.route('/players/leagues/seriea/strikers/')
 def getserieastrikerslist():
-    return getstrikers(31)
+    return get_strikers(31)
 
 @app.route('/players/leagues/seriea/wingers/')
 def getserieawingerslist():
-    return getwingers(31)
+    return get_wingers(31)
 
 @app.route('/players/leagues/seriea/cams/')
 def getserieacamslist():
-    return getcams(31)
+    return get_cams(31)
 
 @app.route('/players/leagues/seriea/cms/')
 def getserieacmslist():
-    return getcms(31)
+    return get_cms(31)
 
 @app.route('/players/leagues/seriea/cdms/')
 def getserieacdmslist():
-    return getcdms(31)
+    return get_cdms(31)
 
 @app.route('/players/leagues/seriea/fbs/')
 def getserieafbslist():
-    return getfbs(31)
+    return get_fbs(31)
 
 @app.route('/players/leagues/seriea/cbs/')
 def getserieacbslist():
-    return getcbs(31)
+    return get_cbs(31)
 
 @app.route('/squads/leagues/seriea/')
 def getserieasquadlist():
-    return getsquad(31)
+    return get_squad_by_league(31)
 
 @app.route('/players/leagues/laliga/strikers/')
 def getlaligastrikerslist():
-    return getstrikers(53)
+    return get_strikers(53)
 
 @app.route('/players/leagues/laliga/wingers/')
 def getlaligawingerslist():
-    return getwingers(53)
+    return get_wingers(53)
 
 @app.route('/players/leagues/laliga/cams/')
 def getlaligacamslist():
-    return getcams(53)
+    return get_cams(53)
 
 @app.route('/players/leagues/laliga/cms/')
 def getlaligacmslist():
-    return getcms(53)
+    return get_cms(53)
 
 @app.route('/players/leagues/laliga/cdms/')
 def getcdmslist():
-    return getcdms(53)
+    return get_cdms(53)
 
 @app.route('/players/leagues/laliga/fbs/')
 def getlaligafbslist():
-    return getfbs(53)
+    return get_fbs(53)
 
 @app.route('/players/leagues/laliga/cbs/')
 def getlaligacbslist():
-    return getcbs(53)
+    return get_cbs(53)
 
 @app.route('/squads/leagues/laliga/')
 def getlaligasquadlist():
-    return getsquad(53)
+    return get_squad_by_league(53)
 
-@app.route("/updateplayerdb/", methods=['GET','POST'])
-def updateplayers():
-    return request_players_by_league()
+
 
 # @app.route("/showmeta/")
 # def show():
