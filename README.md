@@ -1,5 +1,5 @@
 # futstarter-backend documentation
-### FIFA FUT companion webapp for model-based meta-stat player sorting and team building. This initial version only includes the 442 formation for five different leagues. The player database is created by fetching the FUTDB API REST and the player sorting is based on an original meta rating calculation algorithm. 
+### FIFA FUT companion webapp for model-based meta-stat player sorting and team building. This initial version only includes the 442 formation for the five most important leagues, and considers only rare gold cards. The player database is created by fetching the FUTDB API REST and the player sorting is based on an original meta rating calculation algorithm.  
 
 # Table of contents
 1. [Routes & Methods](#routes-&-methods)

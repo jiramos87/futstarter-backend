@@ -3,10 +3,34 @@ from flask import jsonify
 import requests, json
 from app import db
 import meta_weights
+import rsa
 
 baseUrl = 'https://futdb.app/api/players/search'
 apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
 initial_meta_rating = 1
+publicKey, privateKey = rsa.newkeys(512)
+
+class User(db.Model):
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(50), unique=True)
+    email = db.Column(db.String(50), unique=True)
+    password = db.Column(db.String(512))
+    is_admin = db.Column(db.Boolean, nullable=False, default=0)
+
+    def __init__(self, username, email, password, is_admin):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.is_admin = is_admin
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "is_admin": self.is_admin
+        }
 
 class Player(db.Model):
     __tablename__ = 'player'
@@ -98,7 +122,7 @@ class Player(db.Model):
 
 
     def __repr__(self):
-        return f"<id={self.id}, common_name={self.common_name}, rating={self.rating}, st_meta_rating={self.st_meta_rating}>"
+        return f"<id={self.id}, common_name={self.common_name}, rating={self.rating}>"
 
     def __init__(self, resource_id, rarity, common_name, name, first_name, last_name, rating, lw_meta_rating, lf_meta_rating, lm_meta_rating, lst_meta_rating, cst_meta_rating, rst_meta_rating, cf_meta_rating, rw_meta_rating, rf_meta_rating, rm_meta_rating, lcam_meta_rating, ccam_meta_rating, rcam_meta_rating, lcm_meta_rating, ccm_meta_rating, rcm_meta_rating, lcdm_meta_rating, ccdm_meta_rating, rcdm_meta_rating, lwb_meta_rating, lb_meta_rating, lcb_meta_rating, ccb_meta_rating, rcb_meta_rating, rwb_meta_rating, rb_meta_rating, gk_meta_rating, nation, league, club, position, height, weight, attack_work_rate, defense_work_rate, foot, weak_foot, skill_moves, shooting, positioning, finishing, shot_power, long_shots, volleys, penalties, defending, heading_accuracy, interceptions, sliding_tackle, standing_tackle, dribbling_face, agility, balance, ball_control, composure, dribbling, reactions, pace, acceleration, sprint_speed,  passing, crossing, curve, free_kick_accuracy, long_passing, short_passing, vision, physicality, aggression, stamina, jumping, strength, diving, handling, kicking, gk_positioning, reflexes):
         #self.id = id
@@ -277,6 +301,34 @@ class Player(db.Model):
             "gk_positioning": self.gk_positioning,
             "reflexes": self.reflexes 
         }
+
+def register(req_body):
+    test_username = User.query.filter_by(username=req_body['username']).first() 
+    test_email = User.query.filter_by(email=req_body['email']).first()
+    if test_username is None and test_email is None:
+        db.session.add(User(username=req_body['username'], email=req_body['email'], password=rsa.encrypt(req_body['password'].encode(), publicKey), is_admin=0))
+        db.session.commit()
+        users = User.query.all()
+        serialized_users = map(lambda user: user.serialize(), users)
+        filtered_users = list(filter(lambda user: user['username'] == req_body['username'], serialized_users))  
+        return { 
+            "users": list(filtered_users), 
+            "status": 200
+        }## why double list method
+    else:
+        return { 
+            "message": "username or email occupied",
+            "status": 405,
+        }, 400
+
+def make_admin(username):
+    user = User.query.filter_by(username='username')
+    user.is_admin = 1   
+    db.session.commit()
+    return { 
+        "message": 'User is now admin', 
+        "status": 200
+    }
     
 def update():
     update_player_db()
@@ -457,7 +509,7 @@ def get_squad_by_league(league):
     lst_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lst_meta_rating.desc()).limit(10)  
     rst_list = Player.query.filter_by(**{'league' : league}).order_by(Player.rst_meta_rating.desc()).limit(10)
     lm_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lm_meta_rating.desc()).limit(10)
-    lcm_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lcm_meta_rating.desc()).limit(10)
+    lcm_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccdm_meta_rating.desc()).limit(10)
     rcm_list = Player.query.filter_by(**{'league' : league}).order_by(Player.rcm_meta_rating.desc()).limit(10)
     rm_list = Player.query.filter_by(**{'league' : league}).order_by(Player.rm_meta_rating.desc()).limit(10)
     lb_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lb_meta_rating.desc()).limit(10)
@@ -539,14 +591,21 @@ def get_squad_by_league(league):
     return data
 
 ## find way to concat lists LST CST RST and CF,   or filtering by two parameters,  or else do it the long way : one function for each position
-def get_strikers(league):
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.st_meta_rating.desc()).limit(10).all()
+def get_sts(league):
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cst_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
     return data
 
-def get_wingers(league):
+def get_cfs(league):
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cf_meta_rating.desc()).limit(10).all()
+    #map(lambda player: print(player.serialize()), meta_rating_list)
+    data = jsonify(data=[i.serialize for i in meta_rating_list])
+    #return jsonify(meta_rating_list)
+    return data
+
+def get_lws(league):
     
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lw_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -554,9 +613,17 @@ def get_wingers(league):
     #return jsonify(meta_rating_list)
     return data
 
+def get_rws(league):
+    
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.rw_meta_rating.desc()).limit(10).all()
+    #map(lambda player: print(player.serialize()), meta_rating_list)
+    data = jsonify(data=[i.serialize for i in meta_rating_list])
+    #return jsonify(meta_rating_list)
+    return data
+
 def get_cams(league):
     
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cam_meta_rating.desc()).limit(10).all()
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccam_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
@@ -564,7 +631,7 @@ def get_cams(league):
 
 def get_cms(league):
     
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cm_meta_rating.desc()).limit(10).all()
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccm_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
@@ -572,15 +639,23 @@ def get_cms(league):
 
 def get_cdms(league):
     
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cdm_meta_rating.desc()).limit(10).all()
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccdm_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
     return data
 
-def get_fbs(league):
+def get_lbs(league):
     
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.fb_meta_rating.desc()).limit(10).all()
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lb_meta_rating.desc()).limit(10).all()
+    #map(lambda player: print(player.serialize()), meta_rating_list)
+    data = jsonify(data=[i.serialize for i in meta_rating_list])
+    #return jsonify(meta_rating_list)
+    return data
+
+def get_rbs(league):
+    
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.rb_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
@@ -588,7 +663,15 @@ def get_fbs(league):
 
 def get_cbs(league):
     
-    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cb_meta_rating.desc()).limit(10).all()
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccb_meta_rating.desc()).limit(10).all()
+    #map(lambda player: print(player.serialize()), meta_rating_list)
+    data = jsonify(data=[i.serialize for i in meta_rating_list])
+    #return jsonify(meta_rating_list)
+    return data
+
+def get_gks(league):
+    
+    meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.gk_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
     #return jsonify(meta_rating_list)
@@ -628,7 +711,7 @@ def get_lw_meta():
         lw_meta_rating += player.weak_foot * 1.5
         lw_meta_rating += player.skill_moves * 1.5
 
-        player.lw_meta_rating = lw_meta_rating
+        player.lw_meta_rating = round(lw_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -649,7 +732,7 @@ def get_lf_meta():
         lf_meta_rating += player.weak_foot * 1.5
         lf_meta_rating += player.skill_moves * 1.5
 
-        player.lf_meta_rating = lf_meta_rating
+        player.lf_meta_rating = round(lf_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -670,7 +753,7 @@ def get_lm_meta():
         lm_meta_rating += player.weak_foot * 1.5
         lm_meta_rating += player.skill_moves * 1.5
 
-        player.lm_meta_rating = lm_meta_rating
+        player.lm_meta_rating = round(lm_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -692,7 +775,7 @@ def get_lst_meta():
         lst_meta_rating += player.weak_foot * 1.5
         lst_meta_rating += player.skill_moves * 1.5
 
-        player.lst_meta_rating = lst_meta_rating
+        player.lst_meta_rating = round(lst_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -708,12 +791,12 @@ def get_cst_meta():
             + player.ball_control * cst_meta["ball_control"] + player.composure * cst_meta["composure"]
             + player.strength * cst_meta["strength"] + player.jumping * cst_meta["jumping"])
 
-        if player.position == 'ST' or player.position == 'CF': st_meta_rating += 4
+        if player.position == 'ST' or player.position == 'CF': cst_meta_rating += 4
         cst_meta_rating += player.height * 0.01
         cst_meta_rating += player.weak_foot * 1.5
         cst_meta_rating += player.skill_moves * 1.5
 
-        player.cst_meta_rating = cst_meta_rating
+        player.cst_meta_rating = round(cst_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -735,7 +818,7 @@ def get_rst_meta():
         rst_meta_rating += player.weak_foot * 1.5
         rst_meta_rating += player.skill_moves * 1.5
 
-        player.rst_meta_rating = rst_meta_rating
+        player.rst_meta_rating = round(rst_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -756,7 +839,7 @@ def get_cf_meta():
         cf_meta_rating += player.weak_foot * 1.5
         cf_meta_rating += player.skill_moves * 1.5
 
-        player.cf_meta_rating = cf_meta_rating
+        player.cf_meta_rating = round(cf_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -777,7 +860,7 @@ def get_rw_meta():
         rw_meta_rating += player.weak_foot * 1.5
         rw_meta_rating += player.skill_moves * 1.5
 
-        player.rw_meta_rating = rw_meta_rating
+        player.rw_meta_rating = round(rw_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -798,7 +881,7 @@ def get_rf_meta():
         rf_meta_rating += player.weak_foot * 1.5
         rf_meta_rating += player.skill_moves * 1.5
 
-        player.rf_meta_rating = rf_meta_rating
+        player.rf_meta_rating = round(rf_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -819,7 +902,7 @@ def get_rm_meta():
         rm_meta_rating += player.weak_foot * 1.5
         rm_meta_rating += player.skill_moves * 1.5
 
-        player.rm_meta_rating = rm_meta_rating
+        player.rm_meta_rating = round(rm_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -839,7 +922,7 @@ def get_lcam_meta():
         if player.foot == "Right": lcam_meta_rating += 0.04
         lcam_meta_rating += player.weak_foot * 1.5
         lcam_meta_rating += player.skill_moves * 1.5
-        player.lcam_meta_rating = lcam_meta_rating
+        player.lcam_meta_rating = round(lcam_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -859,7 +942,7 @@ def get_ccam_meta():
         ccam_meta_rating += player.weak_foot * 1.5
         ccam_meta_rating += player.skill_moves * 1.5
 
-        player.ccam_meta_rating = ccam_meta_rating
+        player.ccam_meta_rating = round(ccam_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -879,7 +962,7 @@ def get_rcam_meta():
         if player.foot == "Left": rcam_meta_rating += 0.04
         rcam_meta_rating += player.weak_foot * 1.5
         rcam_meta_rating += player.skill_moves * 1.5
-        player.rcam_meta_rating = rcam_meta_rating
+        player.rcam_meta_rating = round(rcam_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -895,6 +978,7 @@ def get_lcm_meta():
             + player.long_passing * lcm_meta["long_passing"] + player.short_passing * lcm_meta["short_passing"] + player.vision * lcm_meta["vision"]
             + player.strength * lcm_meta["strength"] + player.stamina * lcm_meta["stamina"] + player.jumping * lcm_meta["jumping"])
 
+        if player.position == 'CM': lcm_meta_rating += 4
         if player.foot == "Left": lcm_meta_rating += 0.02
         lcm_meta_rating += player.weak_foot * 1
         lcm_meta_rating += player.skill_moves * 0.75
@@ -903,7 +987,7 @@ def get_lcm_meta():
         if player.defense_work_rate == "high": lcm_meta_rating += 3
         elif player.defense_work_rate == "med": lcm_meta_rating += 1
 
-        player.lcm_meta_rating = lcm_meta_rating
+        player.lcm_meta_rating = round(lcm_meta_rating, 2)
         db.session.commit()
        
     return None
@@ -919,6 +1003,7 @@ def get_ccm_meta():
             + player.long_passing * ccm_meta["long_passing"] + player.short_passing * ccm_meta["short_passing"] + player.vision * ccm_meta["vision"]
             + player.strength * ccm_meta["strength"] + player.stamina * ccm_meta["stamina"] + player.jumping * ccm_meta["jumping"])
 
+        if player.position == 'CM': ccm_meta_rating += 4
         ccm_meta_rating += player.weak_foot * 1
         ccm_meta_rating += player.skill_moves * 0.75
         ccm_meta_rating += player.height * 0.01
@@ -927,7 +1012,7 @@ def get_ccm_meta():
         if player.defense_work_rate == "high": ccm_meta_rating += 3
         elif player.defense_work_rate == "med": ccm_meta_rating += 1
 
-        player.ccm_meta_rating = ccm_meta_rating
+        player.ccm_meta_rating = round(ccm_meta_rating, 2)
         db.session.commit()
        
     return None
@@ -943,6 +1028,7 @@ def get_rcm_meta():
             + player.long_passing * rcm_meta["long_passing"] + player.short_passing * rcm_meta["short_passing"] + player.vision * rcm_meta["vision"]
             + player.strength * rcm_meta["strength"] + player.stamina * rcm_meta["stamina"] + player.jumping * rcm_meta["jumping"])
 
+        if player.position == 'CM': rcm_meta_rating += 4
         if player.foot == "Right": rcm_meta_rating += 0.02
         rcm_meta_rating += player.weak_foot * 1
         rcm_meta_rating += player.skill_moves * 0.75
@@ -951,7 +1037,7 @@ def get_rcm_meta():
         if player.defense_work_rate == "high": rcm_meta_rating += 3
         elif player.defense_work_rate == "med": rcm_meta_rating += 1
 
-        player.rcm_meta_rating = rcm_meta_rating
+        player.rcm_meta_rating = round(rcm_meta_rating, 2)
         db.session.commit()
        
     return None
@@ -968,6 +1054,7 @@ def get_lcdm_meta():
             + player.interceptions * lcdm_meta["interceptions"] + player.standing_tackle * lcdm_meta["standing_tackle"] + 
             + player.aggression * lcdm_meta["aggression"])
         
+        if player.position == 'CDM': lcdm_meta_rating += 4
         if player.foot == "Left": lcdm_meta_rating += 0.02
         lcdm_meta_rating += player.weak_foot * 1
         lcdm_meta_rating += player.skill_moves * 0.75
@@ -977,7 +1064,7 @@ def get_lcdm_meta():
         if player.defense_work_rate == "high": lcdm_meta_rating += 3
         elif player.defense_work_rate == "med": lcdm_meta_rating += 1
 
-        player.lcdm_meta_rating = lcdm_meta_rating
+        player.lcdm_meta_rating = round(lcdm_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -993,6 +1080,7 @@ def get_ccdm_meta():
             + player.interceptions * ccdm_meta["interceptions"] + player.standing_tackle * ccdm_meta["standing_tackle"] + 
             + player.aggression * ccdm_meta["aggression"])
         
+        if player.position == 'CDM': ccdm_meta_rating += 4
         ccdm_meta_rating += player.weak_foot * 1
         ccdm_meta_rating += player.skill_moves * 0.75
         ccdm_meta_rating += player.height * 0.01
@@ -1001,7 +1089,7 @@ def get_ccdm_meta():
         if player.defense_work_rate == "high": ccdm_meta_rating += 3
         elif player.defense_work_rate == "med": ccdm_meta_rating += 1
 
-        player.ccdm_meta_rating = ccdm_meta_rating
+        player.ccdm_meta_rating = round(ccdm_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1017,6 +1105,7 @@ def get_rcdm_meta():
             + player.interceptions * rcdm_meta["interceptions"] + player.standing_tackle * rcdm_meta["standing_tackle"] + 
             + player.aggression * rcdm_meta["aggression"])
         
+        if player.position == 'CDM': rcdm_meta_rating += 4
         if player.foot == "Right": rcdm_meta_rating += 0.02
         rcdm_meta_rating += player.weak_foot * 1
         rcdm_meta_rating += player.skill_moves * 0.75
@@ -1026,7 +1115,7 @@ def get_rcdm_meta():
         if player.defense_work_rate == "high": rcdm_meta_rating += 3
         elif player.defense_work_rate == "med": rcdm_meta_rating += 1
 
-        player.rcdm_meta_rating = rcdm_meta_rating
+        player.rcdm_meta_rating = round(rcdm_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1041,6 +1130,7 @@ def get_lwb_meta():
             + player.short_passing * lwb_meta["short_passing"] + player.long_passing * lwb_meta["long_passing"]  + player.vision * lwb_meta["vision"]
             + player.strength * lwb_meta["strength"] + player.stamina * lwb_meta["stamina"])
 
+        if player.position == 'LB' or player.position == 'LWB': lwb_meta_rating += 4
         if player.foot == "Left": lwb_meta_rating += 0.04
         lwb_meta_rating += player.weak_foot * 1
         lwb_meta_rating += player.skill_moves * 1
@@ -1050,7 +1140,7 @@ def get_lwb_meta():
         if player.defense_work_rate == "high": lwb_meta_rating += 3
         elif player.defense_work_rate == "med": lwb_meta_rating += 1
 
-        player.lwb_meta_rating = lwb_meta_rating
+        player.lwb_meta_rating = round(lwb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1064,7 +1154,8 @@ def get_lb_meta():
             + player.dribbling * lb_meta["dribbling"] + player.agility * lb_meta["agility"] + player.balance * lb_meta["balance"]
             + player.short_passing * lb_meta["short_passing"] + player.long_passing * lb_meta["long_passing"]  + player.vision * lb_meta["vision"]
             + player.strength * lb_meta["strength"] + player.stamina * lb_meta["stamina"])
-            
+
+        if player.position == 'LB' or player.position == 'LWB': lb_meta_rating += 4   
         if player.foot == "Left": lb_meta_rating += 0.04
         lb_meta_rating += player.weak_foot * 1
         lb_meta_rating += player.skill_moves * 1
@@ -1074,7 +1165,7 @@ def get_lb_meta():
         if player.defense_work_rate == "high": lb_meta_rating += 3
         elif player.defense_work_rate == "med": lb_meta_rating += 1
 
-        player.lb_meta_rating = lb_meta_rating
+        player.lb_meta_rating = round(lb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1089,6 +1180,8 @@ def get_lcb_meta():
             + player.composure * lcb_meta["composure"] + player.jumping * lcb_meta["jumping"] + player.aggression * lcb_meta["aggression"] + player.strength * lcb_meta["strength"]
             + player.interceptions * lcb_meta["interceptions"] + player.sliding_tackle * lcb_meta["sliding_tackle"] + player.standing_tackle * lcb_meta["standing_tackle"]) 
 
+        if player.position == 'CB': lcb_meta_rating += 4
+        if player.position == 'LB' or player.position == 'RB' or player.position == 'CDM': lcb_meta_rating += 2
         lcb_meta_rating += player.height * 0.01
         if player.foot == "Left": lcb_meta_rating += 0.04
         if player.attack_work_rate == "low": lcb_meta_rating += 3
@@ -1096,7 +1189,7 @@ def get_lcb_meta():
         if player.defense_work_rate == "high": lcb_meta_rating += 3
         elif player.defense_work_rate == "med": lcb_meta_rating += 1
 
-        player.lcb_meta_rating = lcb_meta_rating
+        player.lcb_meta_rating = round(lcb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1111,13 +1204,15 @@ def get_ccb_meta():
             + player.composure * ccb_meta["composure"] + player.jumping * ccb_meta["jumping"] + player.aggression * ccb_meta["aggression"] + player.strength * ccb_meta["strength"]
             + player.interceptions * ccb_meta["interceptions"] + player.sliding_tackle * ccb_meta["sliding_tackle"] + player.standing_tackle * ccb_meta["standing_tackle"]) 
 
+        if player.position == 'CB': ccb_meta_rating += 4
+        if player.position == 'LB' or player.position == 'RB' or player.position == 'CDM': ccb_meta_rating += 2
         ccb_meta_rating += player.height * 0.01
         if player.attack_work_rate == "low": ccb_meta_rating += 3
         elif player.attack_work_rate == "med": ccb_meta_rating += 1
         if player.defense_work_rate == "high": ccb_meta_rating += 3
         elif player.defense_work_rate == "med": ccb_meta_rating += 1
 
-        player.ccb_meta_rating = ccb_meta_rating
+        player.ccb_meta_rating = round(ccb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1132,6 +1227,8 @@ def get_rcb_meta():
             + player.composure * rcb_meta["composure"] + player.jumping * rcb_meta["jumping"] + player.aggression * rcb_meta["aggression"] + player.strength * rcb_meta["strength"]
             + player.interceptions * rcb_meta["interceptions"] + player.sliding_tackle * rcb_meta["sliding_tackle"] + player.standing_tackle * rcb_meta["standing_tackle"]) 
 
+        if player.position == 'CB': rcb_meta_rating += 4
+        if player.position == 'LB' or player.position == 'RB' or player.position == 'CDM': rcb_meta_rating += 2
         rcb_meta_rating += player.height * 0.01
         if player.foot == "Right": rcb_meta_rating += 0.04
         if player.attack_work_rate == "low": rcb_meta_rating += 3
@@ -1139,7 +1236,7 @@ def get_rcb_meta():
         if player.defense_work_rate == "high": rcb_meta_rating += 3
         elif player.defense_work_rate == "med": rcb_meta_rating += 1
 
-        player.rcb_meta_rating = rcb_meta_rating
+        player.rcb_meta_rating = round(rcb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1154,6 +1251,7 @@ def get_rwb_meta():
             + player.short_passing * rwb_meta["short_passing"] + player.long_passing * rwb_meta["long_passing"]  + player.vision * rwb_meta["vision"]
             + player.strength * rwb_meta["strength"] + player.stamina * rwb_meta["stamina"])
 
+        if player.position == 'RB' or player.position == 'RWB': rwb_meta_rating += 4
         if player.foot == "Right": rwb_meta_rating += 0.04
         rwb_meta_rating += player.weak_foot * 1
         rwb_meta_rating += player.skill_moves * 1
@@ -1163,7 +1261,7 @@ def get_rwb_meta():
         if player.defense_work_rate == "high": rwb_meta_rating += 3
         elif player.defense_work_rate == "med": rwb_meta_rating += 1
 
-        player.rwb_meta_rating = rwb_meta_rating
+        player.rwb_meta_rating = round(rwb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1177,7 +1275,8 @@ def get_rb_meta():
             + player.dribbling * rb_meta["dribbling"] + player.agility * rb_meta["agility"] + player.balance * rb_meta["balance"]
             + player.short_passing * rb_meta["short_passing"] + player.long_passing * rb_meta["long_passing"]  + player.vision * rb_meta["vision"]
             + player.strength * rb_meta["strength"] + player.stamina * rb_meta["stamina"])
-            
+
+        if player.position == 'RB' or player.position == 'RWB': rb_meta_rating += 4   
         if player.foot == "Right": rb_meta_rating += 0.04
         rb_meta_rating += player.weak_foot * 1
         rb_meta_rating += player.skill_moves * 1
@@ -1187,7 +1286,7 @@ def get_rb_meta():
         if player.defense_work_rate == "high": rb_meta_rating += 3
         elif player.defense_work_rate == "med": rb_meta_rating += 1
 
-        player.rb_meta_rating = rb_meta_rating
+        player.rb_meta_rating = round(rb_meta_rating, 2)
         db.session.commit()
     return None
 
@@ -1201,9 +1300,9 @@ def get_gk_meta():
              + player.short_passing * gk_meta["short_passing"] + player.long_passing * gk_meta["long_passing"]
             + player.kicking * gk_meta["kicking"] + player.gk_positioning * gk_meta["gk_positioning"] + player.reflexes * gk_meta["reflexes"]) 
 
-        gk_meta_rating += player.height * 0.03
+        gk_meta_rating += player.height * 0.06
 
-        player.cb_meta_rating = gk_meta_rating
+        player.gk_meta_rating = round(gk_meta_rating, 2)
         db.session.commit()
     return None
 
