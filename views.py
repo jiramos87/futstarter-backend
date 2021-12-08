@@ -1,11 +1,12 @@
 import requests
-from flask import request, abort
-from models import update, register, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
+from flask import request, abort, send_from_directory
+from models import update, register, login, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
 from app import app
+import base64
 
 @app.route("/")
 def default():
-    return "<h1>Futstarter backend!</h1><p>To setup the database visit /update, or if you just want to recalculate the meta stats, visit: /calculatemeta</p><p>to GET players from specific leagues: /players/leagues/league/position/ </p><p>to GET squads from specific leagues: /squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
+    return "<h1>Futstarter backend!</h1><p>To setup the database visit /update, or if you just want to recalculate the meta stats, visit: /calculatemeta</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
 
 @app.route("/home/")
 def home():
@@ -31,6 +32,11 @@ def register_fn():
     else:
         abort(405)
 
+@app.route("/api/v1/auth/login", methods=["POST"])
+def create_token():
+    req_body = request.get_json()
+    return login(req_body)
+
 @app.route('/api/v1/auth/admin', methods=['GET, POST'])
 def makeadmin():
     if request.method == 'POST':
@@ -42,59 +48,63 @@ def makeadmin():
     else:
         abort(405)
 
-@app.route('/update/')
+@app.route('/api/v1/setup/update/')
 def update_function():
     return update()
 
-@app.route('/calculatemeta/')
+@app.route('/api/v1/setup/calculatemeta/')
 def calculatemeta():
     return calculate_meta()
 
-@app.route('/players/leagues/<int:league>/st/')
+@app.route('/api/v1/static/<path:path>')
+def send_image(path):
+    return send_from_directory(app.static_folder, path)
+
+@app.route('/api/v1/players/leagues/<int:league>/st/')
 def getlstslist(league):
     return get_sts(league)
 
-@app.route('/players/leagues/<int:league>/cf/')
+@app.route('/api/v1/players/leagues/<int:league>/cf/')
 def getlcfsslist(league):
     return get_cfs(league)
 
-@app.route('/players/leagues/<int:league>/lw/')
+@app.route('/api/v1/players/leagues/<int:league>/lw/')
 def getlwslist(league):
     return get_lws(league)
 
-@app.route('/players/leagues/<int:league>/rw/')
+@app.route('/api/v1/players/leagues/<int:league>/rw/')
 def getrwslist(league):
     return get_rws(league)
 
-@app.route('/players/leagues/<int:league>/cam/')
+@app.route('/api/v1/players/leagues/<int:league>/cam/')
 def getcamslist(league):
     return get_cams(league)
 
-@app.route('/players/leagues/<int:league>/cm/')
+@app.route('/api/v1/players/leagues/<int:league>/cm/')
 def getcmslist(league):
     return get_cms(league)
 
-@app.route('/players/leagues/<int:league>/cdm/')
+@app.route('/api/v1/players/leagues/<int:league>/cdm/')
 def getcdmslist(league):
     return get_cdms(league)
 
-@app.route('/players/leagues/<int:league>/lb/')
+@app.route('/api/v1/players/leagues/<int:league>/lb/')
 def getlbslist(league):
     return get_lbs(league)
 
-@app.route('/players/leagues/<int:league>/cb/')
+@app.route('/api/v1/players/leagues/<int:league>/cb/')
 def getcbslist(league):
     return get_cbs(league)
 
-@app.route('/players/leagues/<int:league>/rb/')
+@app.route('/api/v1/players/leagues/<int:league>/rb/')
 def getrbslist(league):
     return get_rbs(league)
 
-@app.route('/players/leagues/<int:league>/gks/')
+@app.route('/api/v1/players/leagues/<int:league>/gks/')
 def getgkslist(league):
     return get_gks(league)
 
-@app.route('/squads/leagues/<int:league>/')
+@app.route('/api/v1/squads/leagues/<int:league>/')
 def getplsquadlist(league):
     return get_squad_by_league(league)
 

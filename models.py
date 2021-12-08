@@ -1,13 +1,18 @@
 from re import M, S
 from flask import jsonify
 import requests, json
+
+from requests.api import head
 from app import db
 import meta_weights
 import rsa
+from flask_jwt_extended import create_access_token
+from base64 import b64encode
+import base64
 
 baseUrl = 'https://futdb.app/api/players/search'
-apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
 initial_meta_rating = 1
+apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
 publicKey, privateKey = rsa.newkeys(512)
 
 class User(db.Model):
@@ -35,7 +40,7 @@ class User(db.Model):
 class Player(db.Model):
     __tablename__ = 'player'
     id = db.Column(db.Integer, primary_key=True)
-    resource_id = db.Column(db.Integer, unique=True)
+    global_id = db.Column(db.Integer, nullable=False)
     rarity = db.Column(db.Integer, nullable=False)
     common_name = db.Column(db.String(80), nullable=True)
     name = db.Column(db.String(80), nullable=True)
@@ -122,12 +127,12 @@ class Player(db.Model):
 
 
     def __repr__(self):
-        return f"<id={self.id}, common_name={self.common_name}, rating={self.rating}>"
+        return f"<id={self.global_id}, common_name={self.common_name}, rating={self.rating}>"
 
-    def __init__(self, resource_id, rarity, common_name, name, first_name, last_name, rating, lw_meta_rating, lf_meta_rating, lm_meta_rating, lst_meta_rating, cst_meta_rating, rst_meta_rating, cf_meta_rating, rw_meta_rating, rf_meta_rating, rm_meta_rating, lcam_meta_rating, ccam_meta_rating, rcam_meta_rating, lcm_meta_rating, ccm_meta_rating, rcm_meta_rating, lcdm_meta_rating, ccdm_meta_rating, rcdm_meta_rating, lwb_meta_rating, lb_meta_rating, lcb_meta_rating, ccb_meta_rating, rcb_meta_rating, rwb_meta_rating, rb_meta_rating, gk_meta_rating, nation, league, club, position, height, weight, attack_work_rate, defense_work_rate, foot, weak_foot, skill_moves, shooting, positioning, finishing, shot_power, long_shots, volleys, penalties, defending, heading_accuracy, interceptions, sliding_tackle, standing_tackle, dribbling_face, agility, balance, ball_control, composure, dribbling, reactions, pace, acceleration, sprint_speed,  passing, crossing, curve, free_kick_accuracy, long_passing, short_passing, vision, physicality, aggression, stamina, jumping, strength, diving, handling, kicking, gk_positioning, reflexes):
+    def __init__(self, global_id, rarity, common_name, name, first_name, last_name, rating, lw_meta_rating, lf_meta_rating, lm_meta_rating, lst_meta_rating, cst_meta_rating, rst_meta_rating, cf_meta_rating, rw_meta_rating, rf_meta_rating, rm_meta_rating, lcam_meta_rating, ccam_meta_rating, rcam_meta_rating, lcm_meta_rating, ccm_meta_rating, rcm_meta_rating, lcdm_meta_rating, ccdm_meta_rating, rcdm_meta_rating, lwb_meta_rating, lb_meta_rating, lcb_meta_rating, ccb_meta_rating, rcb_meta_rating, rwb_meta_rating, rb_meta_rating, gk_meta_rating, nation, league, club, position, height, weight, attack_work_rate, defense_work_rate, foot, weak_foot, skill_moves, shooting, positioning, finishing, shot_power, long_shots, volleys, penalties, defending, heading_accuracy, interceptions, sliding_tackle, standing_tackle, dribbling_face, agility, balance, ball_control, composure, dribbling, reactions, pace, acceleration, sprint_speed,  passing, crossing, curve, free_kick_accuracy, long_passing, short_passing, vision, physicality, aggression, stamina, jumping, strength, diving, handling, kicking, gk_positioning, reflexes):
         #self.id = id
         # 
-        self.resource_id = resource_id
+        self.global_id = global_id
         self.rarity = rarity
         self.common_name = common_name
         self.name = name
@@ -210,13 +215,13 @@ class Player(db.Model):
         self.handling = handling
         self.kicking = kicking
         self.gk_positioning = gk_positioning
-        self.reflexes = reflexes  
+        self.reflexes = reflexes 
     
     @property
     def serialize(self):
         return {
             "id": self.id,
-            "resource_id": self.resource_id,
+            "global_id": self.global_id,
             "rarity": self.rarity,
             "common_name": self.common_name,
             "name": self.name,
@@ -299,7 +304,7 @@ class Player(db.Model):
             "handling": self.handling,
             "kicking": self.kicking,
             "gk_positioning": self.gk_positioning,
-            "reflexes": self.reflexes 
+            "reflexes": self.reflexes
         }
 
 def register(req_body):
@@ -311,9 +316,12 @@ def register(req_body):
         users = User.query.all()
         serialized_users = map(lambda user: user.serialize(), users)
         filtered_users = list(filter(lambda user: user['username'] == req_body['username'], serialized_users))  
+        access_token = create_access_token(identity=filtered_users.id)
         return { 
             "users": list(filtered_users), 
+            "token": access_token,
             "status": 200
+            
         }## why double list method
     else:
         return { 
@@ -321,8 +329,18 @@ def register(req_body):
             "status": 405,
         }, 400
 
+def login(req_body):
+    user = User.query.filter_by(username=req_body['username'], password=rsa.encrypt(req_body['password'].encode(), publicKey)).first()
+    if user is None:
+        # the user was not found on the database
+       return jsonify({"msg": "Bad username or password"}), 401
+    
+    # create a new token with the user id inside
+    access_token = create_access_token(identity=user.id)
+    return jsonify({"token": access_token, "user_id": user.id, "status": 200}), 200
+
 def make_admin(username):
-    user = User.query.filter_by(username='username')
+    user = User.query.filter_by(username=username)
     user.is_admin = 1   
     db.session.commit()
     return { 
@@ -355,9 +373,9 @@ def update_player_db():
             for page in range(1, responsePageTotalHearer["page_total"], 1):
                 page_response = requests.post(baseUrl+'?page='+str(page), json=request_data, headers=headers).json()
                 for player in page_response["items"]:
-                    print(player["common_name"], player["foot"], player["height"], player["position"], player["defending_attributes"]["interceptions"])
+                    print(player["common_name"], player["id"], player["height"], player["position"], player["defending_attributes"]["interceptions"])
                     PlayerItem = Player(
-                        player["resource_id"], 
+                        player["id"], 
                         player["rarity"],
                         player["common_name"],
                         player["name"],
@@ -440,7 +458,8 @@ def update_player_db():
                         player["goalkeeper_attributes"]["handling"] if player["goalkeeper_attributes"]["handling"] != None else 0, 
                         player["goalkeeper_attributes"]["kicking"] if player["goalkeeper_attributes"]["kicking"] != None else 0,
                         player["goalkeeper_attributes"]["positioning"] if player["goalkeeper_attributes"]["positioning"] != None else 0,
-                        player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0
+                        player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0,
+                    
                     )  
                     db.session.add(PlayerItem)
                     db.session.commit()
@@ -450,6 +469,21 @@ def update_player_db():
             print("error ocurred")
             return None
     return '<div><h3>Player database updated:</h3><ul><li>Premier League</li><li>Ligue 1</li><li>Bundesliga</li><li>SerieA</li><li>LaLiga</li></ul></div>'
+
+def get_card_images():
+    get_faces()
+    get_teams()
+    get_flags()
+    return None
+
+def get_faces():
+    return None
+
+def get_teams():
+    return None
+
+def get_flags():
+    return None
 
 def calculate_meta():
     get_lw_meta()
@@ -583,12 +617,33 @@ def get_squad_by_league(league):
             player_list.append(player)
             squad_dict["gk"] = player
             break
-
     
     for key, value in squad_dict.items():
+        #get_images_for_player(value)
         squad_dict[key] = value.serialize
+
     data = jsonify(squad_dict)
     return data
+
+
+def get_images_for_player(player):
+        headers = {
+            'accept': '*/*',
+            'Content-Type': 'application/json',
+            'X-AUTH-TOKEN': '{}'.format(apiKey)
+        }
+        try:
+            response = requests.get('https://futdb.app/api/players/8/image', headers=headers).text
+            #render_data = base64.b64encode(response).decode('ascii')
+            #print(render_data)
+            player_item = Player.query.get(player.id)
+            player_item.face_image = base64.b64encode(response)
+            db.session.commit()
+        except:
+            print("error during image requests")
+            return None
+
+        return None
 
 ## find way to concat lists LST CST RST and CF,   or filtering by two parameters,  or else do it the long way : one function for each position
 def get_sts(league):
