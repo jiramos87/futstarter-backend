@@ -1,6 +1,6 @@
 import requests
 from flask import request, abort, send_from_directory
-from models import update, register, login, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
+from models import update, register, login, delete_user, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
 from app import app
 import base64
 
@@ -32,10 +32,20 @@ def register_fn():
     else:
         abort(405)
 
+
 @app.route("/api/v1/auth/login", methods=["POST"])
 def create_token():
-    req_body = request.get_json()
-    return login(req_body)
+    if request.method == 'POST':
+        req_body = request.get_json()
+        return login(req_body)
+    elif request.method == 'GET':
+        return 'Hola GET'
+    else:
+        abort(405)
+
+@app.route('/api/v1/auth/delete/<int:id>')
+def delete(id):
+    return delete_user(id)
 
 @app.route('/api/v1/auth/admin', methods=['GET, POST'])
 def makeadmin():

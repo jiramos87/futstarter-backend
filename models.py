@@ -1,11 +1,13 @@
 from re import M, S
-from flask import jsonify
+from flask import jsonify, request, abort
 import requests, json
+from app import app
+from flask_bcrypt import Bcrypt
+bcrypt = Bcrypt(app)
 
 from requests.api import head
 from app import db
 import meta_weights
-import rsa
 from flask_jwt_extended import create_access_token
 from base64 import b64encode
 import base64
@@ -13,7 +15,8 @@ import base64
 baseUrl = 'https://futdb.app/api/players/search'
 initial_meta_rating = 1
 apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
-publicKey, privateKey = rsa.newkeys(512)
+
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -34,7 +37,8 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            "is_admin": self.is_admin
+            "is_admin": self.is_admin,
+            "password": self.password
         }
 
 class Player(db.Model):
@@ -307,37 +311,41 @@ class Player(db.Model):
             "reflexes": self.reflexes
         }
 
-def register(req_body):
-    test_username = User.query.filter_by(username=req_body['username']).first() 
-    test_email = User.query.filter_by(email=req_body['email']).first()
-    if test_username is None and test_email is None:
-        db.session.add(User(username=req_body['username'], email=req_body['email'], password=rsa.encrypt(req_body['password'].encode(), publicKey), is_admin=0))
+def register(request_body):
+    if request.method == 'POST':
+        db.session.add(User(is_admin=0, username=request_body['username'], email=request_body['email'], password=bcrypt.generate_password_hash(request_body['password']).decode('utf-8')))
         db.session.commit()
         users = User.query.all()
         serialized_users = map(lambda user: user.serialize(), users)
-        filtered_users = list(filter(lambda user: user['username'] == req_body['username'], serialized_users))  
-        access_token = create_access_token(identity=filtered_users.id)
-        return { 
-            "users": list(filtered_users), 
-            "token": access_token,
-            "status": 200
-            
-        }## why double list method
+        filtered_users = list(filter(lambda user: user['username'] == request_body['username'], serialized_users))
+        access_token = create_access_token(identity=filtered_users[0]['username'])
+        return {"user": list(filtered_users), "status": 200, "token": access_token}, 200
+    elif request.method == 'GET':
+        return 'Hola GET'
     else:
-        return { 
-            "message": "username or email occupied",
-            "status": 405,
-        }, 400
+        abort(405)
 
-def login(req_body):
-    user = User.query.filter_by(username=req_body['username'], password=rsa.encrypt(req_body['password'].encode(), publicKey)).first()
-    if user is None:
-        # the user was not found on the database
-       return jsonify({"msg": "Bad username or password"}), 401
-    
-    # create a new token with the user id inside
-    access_token = create_access_token(identity=user.id)
-    return jsonify({"token": access_token, "user_id": user.id, "status": 200}), 200
+def login(request_body):
+    print('backend login obj', request_body)
+    users = User.query.all()
+    serialized_users = map(lambda user: user.serialize(), users)
+    filtered_users = list(filter(lambda user: user['username'] == request_body['username'], serialized_users))
+    print('filtered users', filtered_users)
+    #print(filtered_users, bcrypt.generate_password_hash(request_body['password']))
+    if(filtered_users.count == 0):
+        return {"status": 401, "message": "Usuario o contraseña incorrectos"}
+    elif(bcrypt.check_password_hash(filtered_users[0]['password'], request_body['password'])):
+        access_token = create_access_token(identity=filtered_users[0]['username'])
+        return {"user": list(filtered_users),"token": access_token, "status": 200}
+    else:
+        return abort(401)
+   
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    print(user)
+    db.session.delete(user)
+    db.session.commit()
+    return 'User deleted'
 
 def make_admin(username):
     user = User.query.filter_by(username=username)
