@@ -1,1 +1,1 @@
-web: gunicorn futstarter-backend.wgsi
+web: gunicorn wgsi:app
