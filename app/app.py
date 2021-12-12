@@ -19,6 +19,7 @@ db = SQLAlchemy(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 
-if __name__ == "__main__":  # if running in localhost
+if __name__ == "__main__":  
     from views import *
-    app.run(host='0.0.0.0')
+    app.run()
+    #app.run(host='0.0.0.0')
