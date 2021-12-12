@@ -1,1 +1,1 @@
-web: gunicorn fustarter-backend:wgsi
+web: gunicorn app:app
