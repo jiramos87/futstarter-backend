@@ -21,5 +21,5 @@ migrate = Migrate(app, db)
 
 if __name__ == "__main__":  
     from views import *
-    app.run()
+    app.run(host='0.0.0.0', debug=True, port=1337)
     #app.run(host='0.0.0.0')
