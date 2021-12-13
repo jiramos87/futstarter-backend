@@ -19,6 +19,6 @@ db = SQLAlchemy(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 
-if __name__ == "__main__":  
-    from views import *
-    app.run()
+# if __name__ == "__main__":  
+#     from views import *
+#     app.run()
