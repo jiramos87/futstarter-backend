@@ -119,28 +119,3 @@ def getgkslist(league):
 def getplsquadlist(league):
     return get_squad_by_league(league)
 
-
-
-# @app.route("/showmeta/")
-# def show():
-#     return showmeta()
-
-
-
-# @app.route("/api/v1/players/<player_id>", methods=['GET'])
-# def get_players(player_id):
-#     if request.method == 'GET':
-#      return 'Hello' + player_id 
-
-
-
-
-# @app.route("/users/<id>", methods=['GET'])
-#     user = User.query.filter_by(id=<id>) 
-#     def getUser():
-#         return jsonify(user)
-
-# @app.route("/users", methods=['GET'])
-#     users = User.query.all() 
-#     def getUsers():
-#         return jsonify(user) 

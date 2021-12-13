@@ -1,1 +1,1 @@
-web: gunicorn app:app
+web: gunicorn FUTSTARTER-BACKEND.app:app

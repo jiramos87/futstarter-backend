@@ -5,6 +5,13 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 
+# import requests
+# from flask import request, abort, send_from_directory
+# from models import update, register, login, delete_user, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
+# from app import app
+# import base64
+
+
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///futstarter.db'
