@@ -5,8 +5,9 @@ from app import app
 import base64
 
 @app.route("/")
-def default():
-    return "<h1>Futstarter backend!</h1><p>To setup the database visit /update, or if you just want to recalculate the meta stats, visit: /calculatemeta</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
+def serve():
+    return send_from_directory(app.static_folder, 'client/build/index.html')
+    #return "<h1>Futstarter backend!</h1><p>To setup the database visit /update, or if you just want to recalculate the meta stats, visit: /calculatemeta</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
 
 @app.route("/home/")
 def home():
