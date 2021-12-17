@@ -50,6 +50,7 @@ class Player(db.Model):
     name = db.Column(db.String(80), nullable=True)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
+    age = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     lw_meta_rating = db.Column(db.Integer, nullable=False)
     lf_meta_rating = db.Column(db.Integer, nullable=False)
@@ -79,8 +80,11 @@ class Player(db.Model):
     rb_meta_rating = db.Column(db.Integer, nullable=False)
     gk_meta_rating = db.Column(db.Integer, nullable=False)
     nation = db.Column(db.Integer, nullable=True)
+    nation_str = db.Column(db.String(80), nullable=True)
     league = db.Column(db.Integer, nullable=True)
-    club = db.Column(db.Integer, nullable=False)
+    league_str = db.Column(db.String(80), nullable=True)
+    club = db.Column(db.Integer, nullable=True)
+    club_str = db.Column(db.String(80), nullable=True)
     position = db.Column(db.String(80), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     weight = db.Column(db.Integer, nullable=False)
@@ -128,12 +132,15 @@ class Player(db.Model):
     kicking = db.Column(db.Integer, nullable=True)
     gk_positioning = db.Column(db.Integer, nullable=True)
     reflexes = db.Column(db.Integer, nullable=True)
+    # price_playstation = db.Column(db.BigInteger, nullable=True)
+    # price_xbox = db.Column(db.BigInteger, nullable=True)
+    # price_pc = db.Column(db.BigInteger, nullable=True)
 
 
     def __repr__(self):
         return f"<id={self.global_id}, common_name={self.common_name}, rating={self.rating}>"
 
-    def __init__(self, global_id, rarity, common_name, name, first_name, last_name, rating, lw_meta_rating, lf_meta_rating, lm_meta_rating, lst_meta_rating, cst_meta_rating, rst_meta_rating, cf_meta_rating, rw_meta_rating, rf_meta_rating, rm_meta_rating, lcam_meta_rating, ccam_meta_rating, rcam_meta_rating, lcm_meta_rating, ccm_meta_rating, rcm_meta_rating, lcdm_meta_rating, ccdm_meta_rating, rcdm_meta_rating, lwb_meta_rating, lb_meta_rating, lcb_meta_rating, ccb_meta_rating, rcb_meta_rating, rwb_meta_rating, rb_meta_rating, gk_meta_rating, nation, league, club, position, height, weight, attack_work_rate, defense_work_rate, foot, weak_foot, skill_moves, shooting, positioning, finishing, shot_power, long_shots, volleys, penalties, defending, heading_accuracy, interceptions, sliding_tackle, standing_tackle, dribbling_face, agility, balance, ball_control, composure, dribbling, reactions, pace, acceleration, sprint_speed,  passing, crossing, curve, free_kick_accuracy, long_passing, short_passing, vision, physicality, aggression, stamina, jumping, strength, diving, handling, kicking, gk_positioning, reflexes):
+    def __init__(self, global_id, rarity, common_name, name, first_name, last_name, age, rating, lw_meta_rating, lf_meta_rating, lm_meta_rating, lst_meta_rating, cst_meta_rating, rst_meta_rating, cf_meta_rating, rw_meta_rating, rf_meta_rating, rm_meta_rating, lcam_meta_rating, ccam_meta_rating, rcam_meta_rating, lcm_meta_rating, ccm_meta_rating, rcm_meta_rating, lcdm_meta_rating, ccdm_meta_rating, rcdm_meta_rating, lwb_meta_rating, lb_meta_rating, lcb_meta_rating, ccb_meta_rating, rcb_meta_rating, rwb_meta_rating, rb_meta_rating, gk_meta_rating, nation, nation_str, league, league_str, club, club_str, position, height, weight, attack_work_rate, defense_work_rate, foot, weak_foot, skill_moves, shooting, positioning, finishing, shot_power, long_shots, volleys, penalties, defending, heading_accuracy, interceptions, sliding_tackle, standing_tackle, dribbling_face, agility, balance, ball_control, composure, dribbling, reactions, pace, acceleration, sprint_speed,  passing, crossing, curve, free_kick_accuracy, long_passing, short_passing, vision, physicality, aggression, stamina, jumping, strength, diving, handling, kicking, gk_positioning, reflexes):
         #self.id = id
         # 
         self.global_id = global_id
@@ -142,6 +149,7 @@ class Player(db.Model):
         self.name = name
         self.first_name = first_name
         self.last_name = last_name 
+        self.age = age
         self.rating = rating
         self.lw_meta_rating = lw_meta_rating
         self.lf_meta_rating = lf_meta_rating
@@ -171,8 +179,11 @@ class Player(db.Model):
         self.rb_meta_rating = rb_meta_rating
         self.gk_meta_rating = gk_meta_rating
         self.nation = nation
+        self.nation_str = nation_str
         self.league = league
+        self.league_str = league_str
         self.club = club
+        self.club_str = club_str
         self.position = position
         self.height = height
         self.weight = weight
@@ -220,6 +231,9 @@ class Player(db.Model):
         self.kicking = kicking
         self.gk_positioning = gk_positioning
         self.reflexes = reflexes 
+        # self.price_playstation = price_playstation
+        # self.price_xbox = price_xbox
+        # self.price_pc = price_pc
     
     @property
     def serialize(self):
@@ -231,6 +245,7 @@ class Player(db.Model):
             "name": self.name,
             "first_name": self.first_name,
             "last_name": self.name,
+            "age": self.age,
             "rating": self.rating,
             "lw_meta_rating": self.lw_meta_rating,
             "lf_meta_rating": self.lf_meta_rating,
@@ -260,8 +275,11 @@ class Player(db.Model):
             "rb_meta_rating": self.rb_meta_rating,
             "gk_meta_rating": self.gk_meta_rating,
             "nation": self.nation,
+            "nation_str": self.nation_str,
             "league" : self.league, 
+            "league_str": self.league_str,
             "club" : self.club,
+            "club_str": self.club_str,
             "position" : self.position,
             "height" : self.height,
             "weight" : self.weight,
@@ -309,6 +327,9 @@ class Player(db.Model):
             "kicking": self.kicking,
             "gk_positioning": self.gk_positioning,
             "reflexes": self.reflexes
+            # "price_playstation": self.price_playstation,
+            # "price_xbox": self.price_xbox,
+            # "price_pc": self.price_pc
         }
 
 def register(request_body):
@@ -319,11 +340,9 @@ def register(request_body):
         serialized_users = map(lambda user: user.serialize(), users)
         filtered_users = list(filter(lambda user: user['username'] == request_body['username'], serialized_users))
         access_token = create_access_token(identity=filtered_users[0]['username'])
-        return {"user": list(filtered_users), "status": 200, "token": access_token}, 200
-    elif request.method == 'GET':
-        return 'Hola GET'
-    else:
-        abort(405)
+        if(filtered_users.count != 0 or filtered_users != []):
+            return {"user": list(filtered_users), "status": 200, "token": access_token}
+    
 
 def login(request_body):
     print('backend login obj', request_body)
@@ -332,8 +351,8 @@ def login(request_body):
     filtered_users = list(filter(lambda user: user['username'] == request_body['username'], serialized_users))
     print('filtered users', filtered_users)
     #print(filtered_users, bcrypt.generate_password_hash(request_body['password']))
-    if(filtered_users.count == 0):
-        return {"status": 401, "message": "Usuario o contraseña incorrectos"}
+    if(filtered_users.count == 0 or filtered_users == []):
+        return {"status": 401, "message": "Incorrect username or password"}
     elif(bcrypt.check_password_hash(filtered_users[0]['password'], request_body['password'])):
         access_token = create_access_token(identity=filtered_users[0]['username'])
         return {"user": list(filtered_users),"token": access_token, "status": 200}
@@ -381,7 +400,21 @@ def update_player_db():
             for page in range(1, responsePageTotalHearer["page_total"], 1):
                 page_response = requests.post(baseUrl+'?page='+str(page), json=request_data, headers=headers).json()
                 for player in page_response["items"]:
-                    print(player["common_name"], player["id"], player["height"], player["position"], player["defending_attributes"]["interceptions"])
+
+                    nation_res = requests.get('https://futdb.app/api/nations/'+str(player["nation"]), headers=headers).json()
+                    league_res = requests.get('https://futdb.app/api/leagues/'+str(player["league"]), headers=headers).json()
+                    club_res = requests.get('https://futdb.app/api/clubs/'+str(player["club"]), headers=headers).json()
+                    #price_res = requests.get('https://futdb.app/api/players/'+str(player["id"])+'/price', headers=headers).json()
+
+                    nation_res_name = nation_res["item"]["name"]
+                    league_res_name = league_res["item"]["name"]
+                    club_res_name = club_res["item"]["name"]
+                    # price_res_playstation = price_res["playstation"]["price"]
+                    # price_res_xbox = price_res["xbox"]["price"]
+                    # price_res_pc = price_res["pc"]["price"]
+                    
+                    
+                    print(player["id"], player["common_name"])
                     PlayerItem = Player(
                         player["id"], 
                         player["rarity"],
@@ -389,6 +422,7 @@ def update_player_db():
                         player["name"],
                         player["first_name"],
                         player["last_name"],
+                        player["age"],
                         player["rating"],
                         initial_meta_rating,
                         initial_meta_rating,
@@ -418,8 +452,11 @@ def update_player_db():
                         initial_meta_rating,
                         initial_meta_rating,
                         player["nation"],
+                        nation_res_name,
                         player["league"],
+                        league_res_name,
                         player["club"],
+                        club_res_name,
                         player["position"],
                         player["height"],
                         player["weight"],
@@ -466,7 +503,8 @@ def update_player_db():
                         player["goalkeeper_attributes"]["handling"] if player["goalkeeper_attributes"]["handling"] != None else 0, 
                         player["goalkeeper_attributes"]["kicking"] if player["goalkeeper_attributes"]["kicking"] != None else 0,
                         player["goalkeeper_attributes"]["positioning"] if player["goalkeeper_attributes"]["positioning"] != None else 0,
-                        player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0,
+                        player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0
+                        
                     
                     )  
                     db.session.add(PlayerItem)
@@ -654,7 +692,7 @@ def get_images_for_player(player):
         return None
 
 ## find way to concat lists LST CST RST and CF,   or filtering by two parameters,  or else do it the long way : one function for each position
-def get_sts(league):
+def get_csts(league):
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.cst_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
     data = jsonify(data=[i.serialize for i in meta_rating_list])
@@ -684,7 +722,7 @@ def get_rws(league):
     #return jsonify(meta_rating_list)
     return data
 
-def get_cams(league):
+def get_ccams(league):
     
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccam_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -692,7 +730,7 @@ def get_cams(league):
     #return jsonify(meta_rating_list)
     return data
 
-def get_cms(league):
+def get_ccms(league):
     
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccm_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -700,7 +738,7 @@ def get_cms(league):
     #return jsonify(meta_rating_list)
     return data
 
-def get_cdms(league):
+def get_ccdms(league):
     
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccdm_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -724,7 +762,7 @@ def get_rbs(league):
     #return jsonify(meta_rating_list)
     return data
 
-def get_cbs(league):
+def get_ccbs(league):
     
     meta_rating_list = Player.query.filter_by(**{'league' : league}).order_by(Player.ccb_meta_rating.desc()).limit(10).all()
     #map(lambda player: print(player.serialize()), meta_rating_list)

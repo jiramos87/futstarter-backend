@@ -1,13 +1,13 @@
 import requests
 from flask import request, abort, send_from_directory
-from models import update, register, login, delete_user, make_admin, calculate_meta, get_sts, get_cfs, get_lws, get_rws, get_cams, get_cms, get_cdms, get_lbs, get_rbs, get_cbs, get_gks, get_squad_by_league
+from models import update, register, login, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
 from app import app
 import base64
 
 @app.route("/")
 def serve():
     #return send_from_directory(app.static_folder, 'client/build/index.html')
-    return "<h1>Futstarter backend!</h1><p>To setup the database visit /update, or if you just want to recalculate the meta stats, visit: /calculatemeta</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
+    return "<h1>Futstarter backend!</h1><p>To setup the database visit /api/v1/setup/update/, or if you just want to recalculate the meta stats, visit: /api/v1/setup/calculatemeta/</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
 
 @app.route("/home/")
 def home():
@@ -40,7 +40,7 @@ def create_token():
         req_body = request.get_json()
         return login(req_body)
     elif request.method == 'GET':
-        return 'Hola GET'
+        return 'This method only accepts POST'
     else:
         abort(405)
 
@@ -71,12 +71,13 @@ def calculatemeta():
 def send_image(path):
     return send_from_directory(app.static_folder, path)
 
-@app.route('/api/v1/players/leagues/<int:league>/st/')
-def getlstslist(league):
-    return get_sts(league)
+
+@app.route('/api/v1/players/leagues/<int:league>/cst/')
+def getcstslist(league):
+    return get_csts(league)
 
 @app.route('/api/v1/players/leagues/<int:league>/cf/')
-def getlcfsslist(league):
+def getcfslist(league):
     return get_cfs(league)
 
 @app.route('/api/v1/players/leagues/<int:league>/lw/')
@@ -87,25 +88,25 @@ def getlwslist(league):
 def getrwslist(league):
     return get_rws(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/cam/')
-def getcamslist(league):
-    return get_cams(league)
+@app.route('/api/v1/players/leagues/<int:league>/ccam/')
+def getccamslist(league):
+    return get_ccams(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/cm/')
-def getcmslist(league):
-    return get_cms(league)
+@app.route('/api/v1/players/leagues/<int:league>/ccm/')
+def getccmslist(league):
+    return get_ccms(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/cdm/')
-def getcdmslist(league):
-    return get_cdms(league)
+@app.route('/api/v1/players/leagues/<int:league>/ccdm/')
+def getccdmslist(league):
+    return get_ccdms(league)
 
 @app.route('/api/v1/players/leagues/<int:league>/lb/')
 def getlbslist(league):
     return get_lbs(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/cb/')
-def getcbslist(league):
-    return get_cbs(league)
+@app.route('/api/v1/players/leagues/<int:league>/ccb/')
+def getccbslist(league):
+    return get_ccbs(league)
 
 @app.route('/api/v1/players/leagues/<int:league>/rb/')
 def getrbslist(league):
