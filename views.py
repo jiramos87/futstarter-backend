@@ -1,8 +1,11 @@
 import requests
-from flask import request, abort, send_from_directory
-from models import update, register, login, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
+from flask import jsonify, request, abort, send_from_directory
+from models import update, register, login, search_players, save_squad, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
 from app import app
 import base64
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+
 
 @app.route("/")
 def serve():
@@ -43,6 +46,26 @@ def create_token():
         return 'This method only accepts POST'
     else:
         abort(405)
+    
+@app.route("/api/v1/players/search", methods=["POST"])
+def playersearch():
+    if request.method == 'POST':
+        req_body = request.get_json()
+        return search_players(req_body)
+    elif request.method == 'GET':
+        return 'This method only accepts POST'
+    else:
+        abort(405)
+
+@app.route("/user/savesquad", methods=["POST"])
+@jwt_required()
+def savesquad():
+    req_body = request.get_json()
+    save_squad(req_body)
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return { "message": jsonify(logged_in_as=current_user), "status": 200}
+
 
 @app.route('/api/v1/auth/delete/<int:id>')
 def delete(id):

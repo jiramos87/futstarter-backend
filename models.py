@@ -9,6 +9,7 @@ from requests.api import head
 from app import db
 import meta_weights
 from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
 from base64 import b64encode
 import base64
 
@@ -40,6 +41,34 @@ class User(db.Model):
             "is_admin": self.is_admin,
             "password": self.password
         }
+
+class Squad(db.Model):
+    __tablename__ = 'squad'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    global_id = db.Column(db.Integer, unique=True)
+    squad_name = db.Column(db.String(100), unique=False)
+    username = db.Column(db.String(20), unique=False)
+    formation = db.Column(db.String(10), unique=False)
+    squad_dict = db.Column(db.String(1000), unique=False)
+
+    def __init__(self, global_id, squad_name, username, formation, squad_dict):
+        
+        self.global_id = global_id
+        self.squad_name = squad_name
+        self.username = username
+        self.formation = formation
+        self.squad_dict = squad_dict
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "global_id": self.global_id,
+            "squad_name": self.squad_name,
+            "username": self.username,
+            "formation": self.formation,
+            "squad_dict": self.squad_dict
+        }
+
 
 class Player(db.Model):
     __tablename__ = 'player'
@@ -332,6 +361,8 @@ class Player(db.Model):
             # "price_pc": self.price_pc
         }
 
+##################################  USER METHODS
+
 def register(request_body):
     if request.method == 'POST':
         db.session.add(User(is_admin=0, username=request_body['username'], email=request_body['email'], password=bcrypt.generate_password_hash(request_body['password']).decode('utf-8')))
@@ -358,6 +389,65 @@ def login(request_body):
         return {"user": list(filtered_users),"token": access_token, "status": 200}
     else:
         return abort(401)
+
+def search_players(search_string):
+    if len(search_string) >= 3:
+        players = Player.query.filter(Player.last_name.contains(search_string) | Player.first_name.contains(search_string)).limit(10)
+        serialized_players = map(lambda player: player.serialize, players)
+        filtered_players = list(serialized_players)
+        if filtered_players.count == 0:
+            return {"status": 400, "message": "No players found"}
+        else:
+            return {"status": 200, "result": filtered_players}
+    else: 
+        return {"status": 400, "message": "query too short"}
+
+def get_player_price(player_global_id):
+    headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-AUTH-TOKEN': '{}'.format(apiKey)
+        }
+    price_res = requests.get('https://futdb.app/api/players/'+str(player_global_id)+'/price', headers=headers).json()
+    price_ps = price_res["playstation"]["price"]
+ 
+    return {"status": 200, "price": price_ps}
+
+def save_squad(req_body):
+    squads_count = Squad.query.count()  
+    global_id = squads_count + 1
+    db.session.add(Squad(global_id, get_jwt_identity, req_body['squad_name'], req_body['formation'], req_body['squad_data']))
+    db.session.commit()
+
+    squads = Squad.query.all()
+    serialized_squads = map(lambda squad: squad.serialize(), squads)
+    filtered_squads = list(filter(lambda squad: squad['username'] == req_body['username'], serialized_squads))
+    if(filtered_squads.count == 0 or filtered_squads == []):
+        return {"status": 401, "message": "Squad could not be saved, try login out and in again"}
+    else:
+        return {"data": filtered_squads, "status": 200}
+
+def load_squad(squad):   
+    return None
+
+def delete_squad(user_squad): 
+    return None
+
+    #########################  ADMIN METHODS
+
+def filter_players(filter_body):
+    print(filter_body)
+    filter_result = Player.query.filter_by().all()
+    print(filter_result)
+    if filter_result.count == 0:
+        return {"status": 400, "message": "No players found", "data": None}
+    else:
+        for key, value in filter_result.items():
+            print(value.serialize)
+            filter_result[key] = value.serialize
+        data = {"status": 200, "result": filter_result}
+        print(data)
+        return data
    
 def delete_user(user_id):
     user = User.query.get(user_id)
@@ -504,8 +594,6 @@ def update_player_db():
                         player["goalkeeper_attributes"]["kicking"] if player["goalkeeper_attributes"]["kicking"] != None else 0,
                         player["goalkeeper_attributes"]["positioning"] if player["goalkeeper_attributes"]["positioning"] != None else 0,
                         player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0
-                        
-                    
                     )  
                     db.session.add(PlayerItem)
                     db.session.commit()
@@ -515,21 +603,6 @@ def update_player_db():
             print("error ocurred")
             return None
     return '<div><h3>Player database updated:</h3><ul><li>Premier League</li><li>Ligue 1</li><li>Bundesliga</li><li>SerieA</li><li>LaLiga</li></ul></div>'
-
-def get_card_images():
-    get_faces()
-    get_teams()
-    get_flags()
-    return None
-
-def get_faces():
-    return None
-
-def get_teams():
-    return None
-
-def get_flags():
-    return None
 
 def calculate_meta():
     get_lw_meta()
@@ -573,17 +646,17 @@ def get_squad_by_league(league):
 
     player_list = []
     squad_dict = {
-        'lst': {},
-        'rst': {},
-        'lm': {},
-        'lcm': {},
-        'rcm': {},
-        'rm': {},
-        'lb': {},
-        'lcb': {},
-        'rcb': {},
-        'rb': {},
-        'gk': {}
+        'LST': {},
+        'RST': {},
+        'LM': {},
+        'LCM': {},
+        'RCM': {},
+        'RM': {},
+        'LB': {},
+        'LCB': {},
+        'RCB': {},
+        'RB': {},
+        'GK': {}
     }
 
     lst_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lst_meta_rating.desc()).limit(10)  
@@ -601,67 +674,67 @@ def get_squad_by_league(league):
     for player in lst_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lst"] = player
+            squad_dict["LST"] = player
             break
     
     for player in rst_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rst"] = player
+            squad_dict["RST"] = player
             break
     
     for player in lm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lm"] = player
+            squad_dict["LM"] = player
             break
     
     for player in lcm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lcm"] = player
+            squad_dict["LCM"] = player
             break
 
     for player in rcm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rcm"] = player
+            squad_dict["RCM"] = player
             break
 
     for player in rm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rm"] = player
+            squad_dict["RM"] = player
             break
     
     for player in lb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lb"] = player
+            squad_dict["LB"] = player
             break
     
     for player in lcb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lcb"] = player
+            squad_dict["LCB"] = player
             break
     
     for player in rcb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rcb"] = player
+            squad_dict["RCB"] = player
             break
 
     for player in rb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rb"] = player
+            squad_dict["RB"] = player
             break
     
     for player in gk_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["gk"] = player
+            squad_dict["GK"] = player
             break
     
     for key, value in squad_dict.items():
@@ -669,7 +742,22 @@ def get_squad_by_league(league):
         squad_dict[key] = value.serialize
 
     data = jsonify(squad_dict)
-    return data
+
+    data_list = [
+        { 'position': 'LST', 'player_data': squad_dict['LST']},
+        { 'position': 'RST', 'player_data': squad_dict['RST'] },
+        { 'position': 'LM', 'player_data': squad_dict['LM'] },
+        { 'position': 'LCM', 'player_data': squad_dict['LCM'] },
+        { 'position': 'RCM', 'player_data': squad_dict['RCM'] },
+        { 'position': 'RM', 'player_data': squad_dict['RM'] },
+        { 'position': 'LB', 'player_data': squad_dict['LB'] },
+        { 'position': 'LCB', 'player_data': squad_dict['LCB'] },
+        { 'position': 'RCB', 'player_data': squad_dict['RCB']},
+        { 'position': 'RB', 'player_data': squad_dict['RB'] },
+        { 'position': 'GK', 'player_data': squad_dict['GK']}
+    ]
+
+    return jsonify(data_list)
 
 
 def get_images_for_player(player):
