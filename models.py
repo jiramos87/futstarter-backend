@@ -8,6 +8,7 @@ bcrypt = Bcrypt(app)
 from requests.api import head
 from app import db
 import meta_weights
+import formations
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from base64 import b64encode
@@ -16,9 +17,6 @@ import base64
 baseUrl = 'https://futdb.app/api/players/search'
 initial_meta_rating = 1
 apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
-
-
-
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -68,8 +66,6 @@ class Squad(db.Model):
             "formation": self.formation,
             "squad_dict": self.squad_dict
         }
-
-
 class Player(db.Model):
     __tablename__ = 'player'
     id = db.Column(db.Integer, primary_key=True)
@@ -164,7 +160,6 @@ class Player(db.Model):
     # price_playstation = db.Column(db.BigInteger, nullable=True)
     # price_xbox = db.Column(db.BigInteger, nullable=True)
     # price_pc = db.Column(db.BigInteger, nullable=True)
-
 
     def __repr__(self):
         return f"<id={self.global_id}, common_name={self.common_name}, rating={self.rating}>"
@@ -402,6 +397,18 @@ def search_players(search_string):
     else: 
         return {"status": 400, "message": "query too short"}
 
+def get_player_by_id(global_id):
+    if global_id != 0:
+        player = Player.query.filter(Player.global_id == global_id).first()
+        serialized_player = player.serialize
+        filtered_player = list(serialized_player)
+        if filtered_player.count == 0:
+            return {"status": 400, "message": "No players found"}
+        else:
+            return {"status": 200, "result": serialized_player}
+    else:
+        return {"status": 400, "result": None}
+
 def get_player_price(player_global_id):
     headers = {
             'accept': 'application/json',
@@ -413,25 +420,62 @@ def get_player_price(player_global_id):
  
     return {"status": 200, "price": price_ps}
 
-def save_squad(req_body):
+def save_squad(req_body, current_user):
+    #print(req_body)
     squads_count = Squad.query.count()  
     global_id = squads_count + 1
-    db.session.add(Squad(global_id, get_jwt_identity, req_body['squad_name'], req_body['formation'], req_body['squad_data']))
+    squad_list = req_body['squad_data']
+    print(squad_list)
+    db.session.add(Squad(global_id, req_body['squad_name'], current_user, req_body['formation'], str(squad_list)))
     db.session.commit()
+    return {"message": "squad saved", "status": 200}
 
+def get_user_squads(current_user):
+    print('hello get squads')
     squads = Squad.query.all()
     serialized_squads = map(lambda squad: squad.serialize(), squads)
-    filtered_squads = list(filter(lambda squad: squad['username'] == req_body['username'], serialized_squads))
-    if(filtered_squads.count == 0 or filtered_squads == []):
-        return {"status": 401, "message": "Squad could not be saved, try login out and in again"}
-    else:
-        return {"data": filtered_squads, "status": 200}
+    filtered_squads = list(filter(lambda squad: squad['username'] == current_user, serialized_squads))
+    # squads_data = []
+    # for squad in filtered_squads:
+    #     print(squad['squad_dict'][0])
+    #     squad_data = get_squad_from_global_ids(squad['formation'], squad['squad_name'], json.loads(squad['squad_dict']))
+    #     squads_data.append(squad_data) 
+    # print(squads_data)
+    return {"squads_data": filtered_squads, "status": 200}
 
-def load_squad(squad):   
+def get_squad_from_global_ids(squad_formation, squad_name, global_id_list):
+    print(global_id_list)
+    players_data = []
+    players = Player.query.all()
+    serialized_players = map(lambda player: player.serialize, players)
+
+    for i in range(11):
+        print('index', i, 'global_id', global_id_list[i])
+        if global_id_list[i] == 0:
+            players_data.append(None)
+        else:
+            filtered_player = list(filter(lambda player: player['global_id'] == global_id_list[i], serialized_players))
+            print(filtered_player)
+            players_data.append(filtered_player)
+            
+    squad_data = {
+        "formation": squad_formation, 
+        "squad_name": squad_name,
+        "players_data": players_data
+    }
+    return squad_data
+
+def load_squad(squad, current_user):   
     return None
 
-def delete_squad(user_squad): 
+def delete_squad(user_squad, current_user): 
     return None
+
+def delete_all_squads(squad_id):
+    db.session.query(Squad).filter(Squad.id==squad_id).delete() 
+    db.session.commit()
+
+    return 'user squads deleted'
 
     #########################  ADMIN METHODS
 
@@ -866,8 +910,6 @@ def get_gks(league):
     #return jsonify(meta_rating_list)
     return data
 
-
-
 # def getplstrikers():
 #     meta_rating_list = Player.query.order_by(Player.st_meta_rating.desc()).limit(10).all()
 #     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -881,7 +923,6 @@ def showmeta():
     return jsonify(str(data))
 
 #calculate meta stats for every player in every position
-
 
 def get_lw_meta():
     lw_meta = meta_weights.lw

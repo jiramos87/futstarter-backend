@@ -1,6 +1,6 @@
 import requests
 from flask import jsonify, request, abort, send_from_directory
-from models import update, register, login, search_players, save_squad, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
+from models import delete_all_squads, update, register, login, search_players, get_player_by_id, save_squad, get_user_squads, delete_all_squads, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
 from app import app
 import base64
 from flask_jwt_extended import get_jwt_identity
@@ -57,15 +57,42 @@ def playersearch():
     else:
         abort(405)
 
+@app.route("/api/v1/players/<int:id>", methods=["GET"])
+def getplayerbyid(id):
+    return get_player_by_id(id)
+    
+
 @app.route("/user/savesquad", methods=["POST"])
 @jwt_required()
 def savesquad():
-    req_body = request.get_json()
-    save_squad(req_body)
-    # Access the identity of the current user with get_jwt_identity
-    current_user = get_jwt_identity()
-    return { "message": jsonify(logged_in_as=current_user), "status": 200}
+    if request.method == 'POST':
+        current_user = get_jwt_identity()
+        req_body = request.get_json()
+        # Access the identity of the current user with get_jwt_identity
+        
+        return save_squad(req_body, current_user)
+    elif request.method == 'GET':
+        return 'This method only accepts POST'
+    else:
+        abort(405)
 
+@app.route("/user/getusersquads", methods=["POST"])
+@jwt_required()
+def getusersquads():
+    if request.method == 'POST':
+        current_user = get_jwt_identity()
+        print(current_user)
+        # Access the identity of the current user with get_jwt_identity
+        
+        return get_user_squads(current_user)
+    elif request.method == 'GET':
+        return 'This method only accepts POST'
+    else:
+        abort(405)
+
+@app.route("/user/deletesquads/<int:id>")
+def delete_squads(id):
+    return delete_all_squads(id)
 
 @app.route('/api/v1/auth/delete/<int:id>')
 def delete(id):
