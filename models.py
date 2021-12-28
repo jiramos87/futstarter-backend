@@ -1073,6 +1073,9 @@ def get_cf_meta():
         db.session.commit()
     return None
 
+def nofn():
+    return 'dummy'
+
 def get_rw_meta():
     rw_meta = meta_weights.rw
     for i in range(1, db.session.query(Player).count(), 1):
