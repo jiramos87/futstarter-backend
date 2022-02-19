@@ -1,4 +1,6 @@
-#!/Users/Javier/Documents/Projects/4geeks/futstarter/futstarter-backend/bin/python
+#!/bin/sh
+'''exec' "/Users/javier/Documents/Coding Projects/futstarter/futstarter-backend/bin/python" "$0" "$@"
+' '''
 # -*- coding: utf-8 -*-
 import re
 import sys

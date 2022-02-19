@@ -1,6 +1,6 @@
 # Setting all environment variables for the venv
 let path-name = (if ((sys).host.name == "Windows") { "Path" } { "PATH" })
-let virtual-env = "/Users/Javier/Documents/Projects/4geeks/futstarter/futstarter-backend"
+let virtual-env = "/Users/javier/Documents/Coding Projects/futstarter/futstarter-backend"
 let bin = "bin"
 let path-sep = ":"
 
@@ -38,4 +38,4 @@ let-env PROMPT_COMMAND = $new_prompt
 # We are using alias as the function definitions because only aliases can be
 # removed from the scope
 alias pydoc = python -m pydoc
-alias deactivate = source "/Users/Javier/Documents/Projects/4geeks/futstarter/futstarter-backend/bin/deactivate.nu"
+alias deactivate = source "/Users/javier/Documents/Coding Projects/futstarter/futstarter-backend/bin/deactivate.nu"
