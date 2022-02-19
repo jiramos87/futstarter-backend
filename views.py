@@ -1,7 +1,7 @@
 import requests
 from flask import jsonify, request, abort, send_from_directory
 from models import delete_all_squads, update, register, login, search_players, get_player_by_id, save_squad, get_user_squads, delete_all_squads, delete_user, make_admin, calculate_meta, get_csts, get_cfs, get_lws, get_rws, get_ccams, get_ccms, get_ccdms, get_lbs, get_rbs, get_ccbs, get_gks, get_squad_by_league
-from app import app
+from __init__ import app
 import base64
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
