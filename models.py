@@ -8,16 +8,15 @@ bcrypt = Bcrypt(app)
 from requests.api import head
 from app import db
 import meta_weights
+import formations
 from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
 from base64 import b64encode
 import base64
 
 baseUrl = 'https://futdb.app/api/players/search'
 initial_meta_rating = 1
 apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
-
-
-
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -41,6 +40,32 @@ class User(db.Model):
             "password": self.password
         }
 
+class Squad(db.Model):
+    __tablename__ = 'squad'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    global_id = db.Column(db.Integer, unique=True)
+    squad_name = db.Column(db.String(100), unique=False)
+    username = db.Column(db.String(20), unique=False)
+    formation = db.Column(db.String(10), unique=False)
+    squad_dict = db.Column(db.String(1000), unique=False)
+
+    def __init__(self, global_id, squad_name, username, formation, squad_dict):
+        
+        self.global_id = global_id
+        self.squad_name = squad_name
+        self.username = username
+        self.formation = formation
+        self.squad_dict = squad_dict
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "global_id": self.global_id,
+            "squad_name": self.squad_name,
+            "username": self.username,
+            "formation": self.formation,
+            "squad_dict": self.squad_dict
+        }
 class Player(db.Model):
     __tablename__ = 'player'
     id = db.Column(db.Integer, primary_key=True)
@@ -135,7 +160,6 @@ class Player(db.Model):
     # price_playstation = db.Column(db.BigInteger, nullable=True)
     # price_xbox = db.Column(db.BigInteger, nullable=True)
     # price_pc = db.Column(db.BigInteger, nullable=True)
-
 
     def __repr__(self):
         return f"<id={self.global_id}, common_name={self.common_name}, rating={self.rating}>"
@@ -332,6 +356,8 @@ class Player(db.Model):
             # "price_pc": self.price_pc
         }
 
+##################################  USER METHODS
+
 def register(request_body):
     if request.method == 'POST':
         db.session.add(User(is_admin=0, username=request_body['username'], email=request_body['email'], password=bcrypt.generate_password_hash(request_body['password']).decode('utf-8')))
@@ -358,6 +384,114 @@ def login(request_body):
         return {"user": list(filtered_users),"token": access_token, "status": 200}
     else:
         return abort(401)
+
+def search_players(search_string):
+    if len(search_string) >= 3:
+        players = Player.query.filter(Player.last_name.contains(search_string) | Player.first_name.contains(search_string)).limit(10)
+        serialized_players = map(lambda player: player.serialize, players)
+        filtered_players = list(serialized_players)
+        if filtered_players.count == 0:
+            return {"status": 400, "message": "No players found"}
+        else:
+            return {"status": 200, "result": filtered_players}
+    else: 
+        return {"status": 400, "message": "query too short"}
+
+def get_player_by_id(global_id):
+    if global_id != 0:
+        player = Player.query.filter(Player.global_id == global_id).first()
+        serialized_player = player.serialize
+        filtered_player = list(serialized_player)
+        if filtered_player.count == 0:
+            return {"status": 400, "message": "No players found"}
+        else:
+            return {"status": 200, "result": serialized_player}
+    else:
+        return {"status": 400, "result": None}
+
+def get_player_price(player_global_id):
+    headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-AUTH-TOKEN': '{}'.format(apiKey)
+        }
+    price_res = requests.get('https://futdb.app/api/players/'+str(player_global_id)+'/price', headers=headers).json()
+    price_ps = price_res["playstation"]["price"]
+ 
+    return {"status": 200, "price": price_ps}
+
+def save_squad(req_body, current_user):
+    #print(req_body)
+    squads_count = Squad.query.count()  
+    global_id = squads_count + 1
+    squad_list = req_body['squad_data']
+    print(squad_list)
+    db.session.add(Squad(global_id, req_body['squad_name'], current_user, req_body['formation'], str(squad_list)))
+    db.session.commit()
+    return {"message": "squad saved", "status": 200}
+
+def get_user_squads(current_user):
+    print('hello get squads')
+    squads = Squad.query.all()
+    serialized_squads = map(lambda squad: squad.serialize(), squads)
+    filtered_squads = list(filter(lambda squad: squad['username'] == current_user, serialized_squads))
+    # squads_data = []
+    # for squad in filtered_squads:
+    #     print(squad['squad_dict'][0])
+    #     squad_data = get_squad_from_global_ids(squad['formation'], squad['squad_name'], json.loads(squad['squad_dict']))
+    #     squads_data.append(squad_data) 
+    # print(squads_data)
+    return {"squads_data": filtered_squads, "status": 200}
+
+def get_squad_from_global_ids(squad_formation, squad_name, global_id_list):
+    print(global_id_list)
+    players_data = []
+    players = Player.query.all()
+    serialized_players = map(lambda player: player.serialize, players)
+
+    for i in range(11):
+        print('index', i, 'global_id', global_id_list[i])
+        if global_id_list[i] == 0:
+            players_data.append(None)
+        else:
+            filtered_player = list(filter(lambda player: player['global_id'] == global_id_list[i], serialized_players))
+            print(filtered_player)
+            players_data.append(filtered_player)
+            
+    squad_data = {
+        "formation": squad_formation, 
+        "squad_name": squad_name,
+        "players_data": players_data
+    }
+    return squad_data
+
+def load_squad(squad, current_user):   
+    return None
+
+def delete_squad(user_squad, current_user): 
+    return None
+
+def delete_all_squads(squad_id):
+    db.session.query(Squad).filter(Squad.id==squad_id).delete() 
+    db.session.commit()
+
+    return 'user squads deleted'
+
+    #########################  ADMIN METHODS
+
+def filter_players(filter_body):
+    print(filter_body)
+    filter_result = Player.query.filter_by().all()
+    print(filter_result)
+    if filter_result.count == 0:
+        return {"status": 400, "message": "No players found", "data": None}
+    else:
+        for key, value in filter_result.items():
+            print(value.serialize)
+            filter_result[key] = value.serialize
+        data = {"status": 200, "result": filter_result}
+        print(data)
+        return data
    
 def delete_user(user_id):
     user = User.query.get(user_id)
@@ -504,8 +638,6 @@ def update_player_db():
                         player["goalkeeper_attributes"]["kicking"] if player["goalkeeper_attributes"]["kicking"] != None else 0,
                         player["goalkeeper_attributes"]["positioning"] if player["goalkeeper_attributes"]["positioning"] != None else 0,
                         player["goalkeeper_attributes"]["reflexes"] if player["goalkeeper_attributes"]["reflexes"] != None else 0
-                        
-                    
                     )  
                     db.session.add(PlayerItem)
                     db.session.commit()
@@ -515,21 +647,6 @@ def update_player_db():
             print("error ocurred")
             return None
     return '<div><h3>Player database updated:</h3><ul><li>Premier League</li><li>Ligue 1</li><li>Bundesliga</li><li>SerieA</li><li>LaLiga</li></ul></div>'
-
-def get_card_images():
-    get_faces()
-    get_teams()
-    get_flags()
-    return None
-
-def get_faces():
-    return None
-
-def get_teams():
-    return None
-
-def get_flags():
-    return None
 
 def calculate_meta():
     get_lw_meta()
@@ -573,17 +690,17 @@ def get_squad_by_league(league):
 
     player_list = []
     squad_dict = {
-        'lst': {},
-        'rst': {},
-        'lm': {},
-        'lcm': {},
-        'rcm': {},
-        'rm': {},
-        'lb': {},
-        'lcb': {},
-        'rcb': {},
-        'rb': {},
-        'gk': {}
+        'LST': {},
+        'RST': {},
+        'LM': {},
+        'LCM': {},
+        'RCM': {},
+        'RM': {},
+        'LB': {},
+        'LCB': {},
+        'RCB': {},
+        'RB': {},
+        'GK': {}
     }
 
     lst_list = Player.query.filter_by(**{'league' : league}).order_by(Player.lst_meta_rating.desc()).limit(10)  
@@ -601,67 +718,67 @@ def get_squad_by_league(league):
     for player in lst_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lst"] = player
+            squad_dict["LST"] = player
             break
     
     for player in rst_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rst"] = player
+            squad_dict["RST"] = player
             break
     
     for player in lm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lm"] = player
+            squad_dict["LM"] = player
             break
     
     for player in lcm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lcm"] = player
+            squad_dict["LCM"] = player
             break
 
     for player in rcm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rcm"] = player
+            squad_dict["RCM"] = player
             break
 
     for player in rm_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rm"] = player
+            squad_dict["RM"] = player
             break
     
     for player in lb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lb"] = player
+            squad_dict["LB"] = player
             break
     
     for player in lcb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["lcb"] = player
+            squad_dict["LCB"] = player
             break
     
     for player in rcb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rcb"] = player
+            squad_dict["RCB"] = player
             break
 
     for player in rb_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["rb"] = player
+            squad_dict["RB"] = player
             break
     
     for player in gk_list:
         if not exists(player_list, player):
             player_list.append(player)
-            squad_dict["gk"] = player
+            squad_dict["GK"] = player
             break
     
     for key, value in squad_dict.items():
@@ -669,7 +786,22 @@ def get_squad_by_league(league):
         squad_dict[key] = value.serialize
 
     data = jsonify(squad_dict)
-    return data
+
+    data_list = [
+        { 'position': 'LST', 'player_data': squad_dict['LST']},
+        { 'position': 'RST', 'player_data': squad_dict['RST'] },
+        { 'position': 'LM', 'player_data': squad_dict['LM'] },
+        { 'position': 'LCM', 'player_data': squad_dict['LCM'] },
+        { 'position': 'RCM', 'player_data': squad_dict['RCM'] },
+        { 'position': 'RM', 'player_data': squad_dict['RM'] },
+        { 'position': 'LB', 'player_data': squad_dict['LB'] },
+        { 'position': 'LCB', 'player_data': squad_dict['LCB'] },
+        { 'position': 'RCB', 'player_data': squad_dict['RCB']},
+        { 'position': 'RB', 'player_data': squad_dict['RB'] },
+        { 'position': 'GK', 'player_data': squad_dict['GK']}
+    ]
+
+    return jsonify(data_list)
 
 
 def get_images_for_player(player):
@@ -778,8 +910,6 @@ def get_gks(league):
     #return jsonify(meta_rating_list)
     return data
 
-
-
 # def getplstrikers():
 #     meta_rating_list = Player.query.order_by(Player.st_meta_rating.desc()).limit(10).all()
 #     #map(lambda player: print(player.serialize()), meta_rating_list)
@@ -793,7 +923,6 @@ def showmeta():
     return jsonify(str(data))
 
 #calculate meta stats for every player in every position
-
 
 def get_lw_meta():
     lw_meta = meta_weights.lw
@@ -943,6 +1072,9 @@ def get_cf_meta():
         player.cf_meta_rating = round(cf_meta_rating, 2)
         db.session.commit()
     return None
+
+def nofn():
+    return 'dummy'
 
 def get_rw_meta():
     rw_meta = meta_weights.rw
