@@ -205,7 +205,7 @@ And also render the squads previosuly generated with the meta calculation model
 Further improvements to the generated squad and the generator itself could be made. Ranging from the creation of a futbin-based approach of a squad builder, to the implementation of a user controlled, meta-weight modelling tool for squad generation. For example, imagine starting from a futbin-based user-built squad, and on top of it, tweaking the meta-weights to alter the team as desired.
 Also, the database could be extendend to cover the entire FUT player database, every squad formation and any nation.
 
-
+Delete me
 
 
 
