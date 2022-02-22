@@ -14,7 +14,12 @@ from flask_jwt_extended import JWTManager
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.debug = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///futstarter.db'
+# username = "Javier"
+password = "ibanez570"
+dbname = "futstarter"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///futstarter.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_SORT_KEYS'] = False
 app.config["JWT_SECRET_KEY"] = "serverkey"

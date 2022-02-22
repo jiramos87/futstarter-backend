@@ -1,12 +1,12 @@
 from re import M, S
 from flask import jsonify, request, abort
 import requests, json
-from app import app
+from __init__ import app
 from flask_bcrypt import Bcrypt
 bcrypt = Bcrypt(app)
 
 from requests.api import head
-from app import db
+from __init__ import db
 import meta_weights
 import formations
 from flask_jwt_extended import create_access_token
