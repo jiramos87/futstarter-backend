@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+import os
 
 
 # import requests
@@ -12,7 +13,7 @@ from flask_jwt_extended import JWTManager
 # import base64
 
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder=os.path.abspath("/static")', static_url_path='')
 app.debug = True
 # username = "Javier"
 password = "ibanez570"
