@@ -13,7 +13,7 @@ import os
 # import base64
 
 
-app = Flask(__name__, static_folder=os.path.abspath("/static")', static_url_path='')
+app = Flask(__name__, static_folder=os.path.abspath("/static"), static_url_path='')
 app.debug = True
 # username = "Javier"
 password = "ibanez570"
