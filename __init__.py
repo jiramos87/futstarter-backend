@@ -20,8 +20,8 @@ app.debug = True
 password = "ibanez570"
 dbname = "futstarter"
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///futstarter.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_SORT_KEYS'] = False
