@@ -1,14 +1,16 @@
 from re import M, S
 from flask import jsonify, request, abort
+from flask_sqlalchemy import SQLAlchemy
 import requests, json
-from __init__ import app
+
 from flask_bcrypt import Bcrypt
-bcrypt = Bcrypt(app)
+
 
 from requests.api import head
-from __init__ import db
+db = SQLAlchemy()
+from __init__ import app
+bcrypt = Bcrypt(app)
 import meta_weights
-import formations
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from base64 import b64encode
@@ -17,6 +19,7 @@ import base64
 baseUrl = 'https://futdb.app/api/players/search'
 initial_meta_rating = 1
 apiKey = '97c4dd2b-fe2e-4407-8ea3-f26435d6ce9b'
+
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
