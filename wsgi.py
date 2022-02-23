@@ -1,2 +1,2 @@
 from __init__ import getApp
-app = getApp()
+get_app = getApp()

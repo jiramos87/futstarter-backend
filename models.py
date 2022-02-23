@@ -8,8 +8,8 @@ from flask_bcrypt import Bcrypt
 
 from requests.api import head
 db = SQLAlchemy()
-from __init__ import app
-bcrypt = Bcrypt(app)
+from __init__ import flask_app
+bcrypt = Bcrypt(flask_app)
 import meta_weights
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity

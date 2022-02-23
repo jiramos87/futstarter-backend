@@ -21,54 +21,52 @@ ENV = os.environ
 
 
 # app = Flask(__name__, static_folder='static', static_url_path='')
-app = Flask(__name__, static_folder=os.path.abspath("/static"), static_url_path='')
-app.debug = True
+flask_app = Flask(__name__, static_folder=os.path.abspath("/static"), static_url_path='')
+flask_app.debug = True
 FLASK_ENV = 'production'
 
 is_prod = os.environ.get('IS_HEROKU', None)
 
 if is_prod:
-    app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
+    flask_app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
 else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
+    flask_app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
  
     
 # app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///futstarter.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JSON_SORT_KEYS'] = False
-app.config["JWT_SECRET_KEY"] = "serverkey"  
-jwt = JWTManager(app)
+flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+flask_app.config['JSON_SORT_KEYS'] = False
+flask_app.config["JWT_SECRET_KEY"] = "serverkey"  
+jwt = JWTManager(flask_app)
 
-CORS(app)
+CORS(flask_app)
 
 #db = SQLAlchemy(app)
-db.init_app(app)
-migrate = Migrate(app, db)
+db.init_app(flask_app)
+migrate = Migrate(flask_app, db)
 
 def getApp():
     return app
 
-
-
-@app.route("/")
+@flask_app.route("/")
 def serve():
     #return send_from_directory(app.static_folder, 'client/build/index.html')
     return "<h1>Futstarter backend!</h1><p>To setup the database visit /api/v1/setup/update/, or if you just want to recalculate the meta stats, visit: /api/v1/setup/calculatemeta/</p><p>to GET players from specific leagues: /api/v1/players/leagues/league/position/ </p><p>to GET squads from specific leagues: /api/v1/squads/leagues/league/ </p> <p> where league is an integer: (13: PL, 16:Ligue1, 19: Bundes, 31:SerieA, 53: LaLiga) and position is a string (GK, LB, LCB, RCB, RB, LM, LCM, RCM, RM, LST, RST)</p>"
 
-@app.route("/home/")
+@flask_app.route("/home/")
 def home():
     return "<p>Hello, World!</p>"
 
-@app.route('/user/<int:id>/')
+@flask_app.route('/user/<int:id>/')
 def user_profile(id):
     return "Profile page of user #{}".format(id)
 
-@app.route('/api/v1/users', methods=['GET', 'POST'])
+@flask_app.route('/api/v1/users', methods=['GET', 'POST'])
 def users():
     return None
 
-@app.route('/api/v1/auth/register', methods=['GET', 'POST'])
+@flask_app.route('/api/v1/auth/register', methods=['GET', 'POST'])
 def register_fn():
     if request.method == 'POST':
         request_body = request.get_json()
@@ -81,7 +79,7 @@ def register_fn():
         abort(405)
 
 
-@app.route("/api/v1/auth/login", methods=["POST"])
+@flask_app.route("/api/v1/auth/login", methods=["POST"])
 def create_token():
     if request.method == 'POST':
         req_body = request.get_json()
@@ -91,7 +89,7 @@ def create_token():
     else:
         abort(405)
     
-@app.route("/api/v1/players/search", methods=["POST"])
+@flask_app.route("/api/v1/players/search", methods=["POST"])
 def playersearch():
     if request.method == 'POST':
         req_body = request.get_json()
@@ -101,12 +99,12 @@ def playersearch():
     else:
         abort(405)
 
-@app.route("/api/v1/players/<int:id>", methods=["GET"])
+@flask_app.route("/api/v1/players/<int:id>", methods=["GET"])
 def getplayerbyid(id):
     return get_player_by_id(id)
     
 
-@app.route("/user/savesquad", methods=["POST"])
+@flask_app.route("/user/savesquad", methods=["POST"])
 @jwt_required()
 def savesquad():
     if request.method == 'POST':
@@ -120,7 +118,7 @@ def savesquad():
     else:
         abort(405)
 
-@app.route("/user/getusersquads", methods=["POST"])
+@flask_app.route("/user/getusersquads", methods=["POST"])
 @jwt_required()
 def getusersquads():
     if request.method == 'POST':
@@ -134,15 +132,15 @@ def getusersquads():
     else:
         abort(405)
 
-@app.route("/user/deletesquads/<int:id>")
+@flask_app.route("/user/deletesquads/<int:id>")
 def delete_squads(id):
     return delete_all_squads(id)
 
-@app.route('/api/v1/auth/delete/<int:id>')
+@flask_app.route('/api/v1/auth/delete/<int:id>')
 def delete(id):
     return delete_user(id)
 
-@app.route('/api/v1/auth/admin', methods=['GET, POST'])
+@flask_app.route('/api/v1/auth/admin', methods=['GET, POST'])
 def makeadmin():
     if request.method == 'POST':
         request_body = request.get_json()
@@ -153,67 +151,67 @@ def makeadmin():
     else:
         abort(405)
 
-@app.route('/api/v1/setup/update/')
+@flask_app.route('/api/v1/setup/update/')
 def update_function():
     return update()
 
-@app.route('/api/v1/setup/calculatemeta/')
+@flask_app.route('/api/v1/setup/calculatemeta/')
 def calculatemeta():
     return calculate_meta()
 
-@app.route('/api/v1/static/<path:path>')
+@flask_app.route('/api/v1/static/<path:path>')
 def send_image(path):
-    return send_from_directory(app.static_folder, path)
+    return send_from_directory(flask_app.static_folder, path)
 
 
-@app.route('/api/v1/players/leagues/<int:league>/cst/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/cst/')
 def getcstslist(league):
     return get_csts(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/cf/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/cf/')
 def getcfslist(league):
     return get_cfs(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/lw/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/lw/')
 def getlwslist(league):
     return get_lws(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/rw/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/rw/')
 def getrwslist(league):
     return get_rws(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/ccam/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/ccam/')
 def getccamslist(league):
     return get_ccams(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/ccm/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/ccm/')
 def getccmslist(league):
     return get_ccms(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/ccdm/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/ccdm/')
 def getccdmslist(league):
     return get_ccdms(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/lb/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/lb/')
 def getlbslist(league):
     return get_lbs(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/ccb/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/ccb/')
 def getccbslist(league):
     return get_ccbs(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/rb/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/rb/')
 def getrbslist(league):
     return get_rbs(league)
 
-@app.route('/api/v1/players/leagues/<int:league>/gks/')
+@flask_app.route('/api/v1/players/leagues/<int:league>/gks/')
 def getgkslist(league):
     return get_gks(league)
 
-@app.route('/api/v1/squads/leagues/<int:league>/')
+@flask_app.route('/api/v1/squads/leagues/<int:league>/')
 def getplsquadlist(league):
     return get_squad_by_league(league)
 
 if __name__ == "__main__":  
     #from views import *
-    app.run()
+    flask_app.run()
