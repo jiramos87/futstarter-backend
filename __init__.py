@@ -16,8 +16,11 @@ ENV = os.environ
 # app = Flask(__name__, static_folder='static', static_url_path='')
 app = Flask(__name__, static_folder=os.path.abspath("/static"), static_url_path='')
 app.debug = True
+FLASK_ENV = 'production'
 
-if ENV == 'dev':
+is_prod = os.environ.get('IS_HEROKU', None)
+
+if is_prod:
     app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://javier:ibanez570@localhost:5432/futstarter"
 else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://namyczudfpxnaf:2d840075e00fc6846392af812a87736d9a9ef90d110c0d45567b358494a2a535@ec2-3-92-119-83.compute-1.amazonaws.com:5432/d3d1mnvm26jdpl"
