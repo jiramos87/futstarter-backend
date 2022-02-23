@@ -1,1 +1,1 @@
-web: gunicorn __init__:app -b "$HOST:$PORT" -w 3
+web: gunicorn wgsi:app
